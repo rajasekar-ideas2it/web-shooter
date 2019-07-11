@@ -2,13 +2,24 @@
   "name": "Web shooter",
   "version": "1.0",
   "description": "Build an Extension!",
-  "permissions": ["activeTab", "declarativeContent", "storage"],
+  "permissions": [
+    "activeTab",
+    "declarativeContent",
+
+    "unlimitedStorage",
+    "storage",
+    "desktopCapture",
+    "<all_urls>",
+    "clipboardWrite",
+    "clipboardRead",
+    "tabs"
+  ],
   "options_page": "options.html",
   "background": {
     "scripts": ["background.js"],
     "persistent": false
   },
-  "page_action": {
+  "browser_action": {
     "default_popup": "popup.html",
     "default_icon": {
       "16": "./assets/images/get_started16.png",
