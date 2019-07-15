@@ -75,9 +75,9 @@ const onVideoStreamSuccess = stream => {
   mediaRecorder.start();
 
   // Stop sharing button handler
-  stream.getVideoTracks()[0].onended = function() {
+  stream.getVideoTracks()[0].onended = function () {
     console.info("Recording has ended");
-    // stopVideoeRecording();
+    // stopVideoRecording();
     stopRecording();
   };
 };
@@ -86,67 +86,71 @@ const onVideoStreamFailure = () => {
   console.log('onVideoStreamFailure ');
 }
 
-const stopVideoeRecording = () => {
-  
-  if (recordingVideoId != null) {
-    chrome.desktopCapture.cancelChooseDesktopMedia(recordingVideoId);
-    recordingVideoId=null;
-    if(mediaRecorder.state === "recording") {
-      mediaRecorder.stop();
-      // To Be removed and fixed properly
-      setTimeout(() => {
-        getVideoDataUrl();
-      }, 2000);
+const stopVideoRecording = () => {
+  return new Promise((resolve, reject) => {
+    if (recordingVideoId != null) {
+      chrome.desktopCapture.cancelChooseDesktopMedia(recordingVideoId);
+      recordingVideoId = null;
+      if (mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+        // To Be removed and fixed properly
+        setTimeout(() => {
+          resolve(getVideoDataUrl());
+        }, 2000);
+      }
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
     }
-    if(stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
-  }
+  });
 }
 
 const getVideoDataUrl = () => {
-  if(recordedVideoBlobs.length>0) {
+  if (recordedVideoBlobs.length > 0) {
     const recordedobjectURL = window.URL.createObjectURL(new Blob(recordedVideoBlobs, { type: videoMimeType }));
-    console.log('recordedobjectURL, ', recordedobjectURL)
-    // Creates a invisible anchor tag and downloads video.
-    var a = document.createElement('a');
-    document.body.appendChild(a);
-    a.style = 'display: none';
-    a.href = recordedobjectURL;
-    a.download = 'screenrecording.webm';
-    a.click();
-    window.URL.revokeObjectURL(recordedobjectURL);
+    // console.log('recordedobjectURL, ', recordedobjectURL)
+    // // Creates a invisible anchor tag and downloads video.
+    // var a = document.createElement('a');
+    // document.body.appendChild(a);
+    // a.style = 'display: none';
+    // a.href = recordedobjectURL;
+    // a.download = 'screenrecording.webm';
+    // a.click();
+    // window.URL.revokeObjectURL(recordedobjectURL);
+    return recordedobjectURL;
   }
 }
 
 const stopRecording = () => {
   // stopConsoleRecording().then(logs => {
-    
+
   //   const data  = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(logs));
   //   const a       = document.createElement('a');
   //   a.href      = 'data:' + data;
   //   a.download  = 'data.txt';
   //   a.click();
 
-  //   stopVideoeRecording();
+  //   stopVideoRecording();
   // });
 
 
   stopNetworkRecording().then(networkLog => {
     console.log('Network log', networkLog);
-    const data  = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(networkLog));
-    const a       = document.createElement('a');
-    a.href      = 'data:' + data;
-    a.download  = 'network-logs.txt';
+    const data = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(networkLog));
+    const a = document.createElement('a');
+    a.href = 'data:' + data;
+    a.download = 'network-logs.txt';
     a.click();
     networkLog = null;
-    stopVideoeRecording();
+    stopVideoRecording().then((videoObjectUrl) => {
+      chrome.tabs.create({ url: 'edit.html' });
+    });
   });
 }
 
 // CONSOLE RECORDING START
 const startConsoleRecording = () => {
-  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     chrome.tabs.sendMessage(tabs[0].id, { action: constants.START_CONSOLE_RECORDING }, (response) => {
       console.log(response);
     });
@@ -155,7 +159,7 @@ const startConsoleRecording = () => {
 
 const stopConsoleRecording = () => {
   return new Promise((res, rej) => {
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { action: constants.STOP_CONSOLE_RECORDING }, (response) => {
         console.log(response);
         res(response);
@@ -198,7 +202,7 @@ const stopNetworkRecording = () => {
 }
 
 const handleDevtoolsMessages = message => {
-  switch(message.action) {
+  switch (message.action) {
     case 'setNetworkLog':
       console.log('Messages - - - - ', message);
       networkLog = message.message;
@@ -211,11 +215,11 @@ const handleDevtoolsMessages = message => {
 chrome.runtime.onConnect.addListener(port => {
   ports = { ...ports, [`${port.name}`]: port };
   port.onMessage.addListener(message => {
-    switch(port.name) {
+    switch (port.name) {
       case 'devtools':
         handleDevtoolsMessages(message);
         break;
-      default: 
+      default:
         console.log('Unhandled port connection');
     }
   });
