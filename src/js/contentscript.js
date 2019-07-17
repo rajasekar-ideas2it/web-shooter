@@ -40,7 +40,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 });
 
 const cleanConsoleLogs = () => {
-  localStorage.setItem("consoleLogs", '{"log": [], "debug": [], "error": [], "warn": []}');
+  localStorage.setItem("consoleLogs", '[]');
 };
 
 function AddConsolejs() {
