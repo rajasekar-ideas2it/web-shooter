@@ -23,6 +23,7 @@
     "all_frames": true,
     "js": ["contentscript.js"]
   }],
+  "web_accessible_resources": ["console.js"],
   "options_page": "options.html",
   "devtools_page": "devtools.html",
   "background": {

@@ -2,13 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-'use strict';
+"use strict";
 
-const startRecordingBtn = document.getElementById('startRecordingBtn');
+const startRecordingBtn = document.getElementById("startRecordingBtn");
 
 startRecordingBtn.onclick = () => {
-  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
     const { id: currentTabId } = tabs[0];
     chrome.extension.getBackgroundPage().startRecording(currentTabId);
   });
-}
+};
+
+const stopRecordingBtn = document.getElementById("stopRecordingBtn");
+
+// stopRecordingBtn.onclick = () => {
+//   chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+//     const { id: currentTabId } = tabs[0];
+//     chrome.extension.getBackgroundPage().stopRecording(currentTabId);
+//   });
+// };
