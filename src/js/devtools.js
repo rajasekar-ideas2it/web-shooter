@@ -1,17 +1,21 @@
-const port = chrome.runtime.connect({ name: 'devtools' });
+const port = chrome.runtime.connect({ name: "devtools" });
 
-const getNetworkLog = (message) => {
+const getNetworkLog = message => {
   chrome.devtools.network.getHAR(harLog => {
-    port.postMessage({ action: 'setNetworkLog', source: 'devtools', message: harLog });
+    port.postMessage({
+      action: "setNetworkLog",
+      source: "devtools",
+      message: harLog
+    });
   });
-}
+};
 
 port.onMessage.addListener(message => {
-  switch(message.action) {
-    case 'getNetworkHar':
+  switch (message.action) {
+    case "getNetworkHar":
       getNetworkLog(message);
       break;
     default:
-      console.log('Unhandled message');
+      console.log("Unhandled message");
   }
 });

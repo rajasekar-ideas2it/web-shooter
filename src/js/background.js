@@ -5,8 +5,8 @@
 "use strict";
 
 const constants = {
-  START_CONSOLE_RECORDING: 'START_CONSOLE_RECORDING',
-  STOP_CONSOLE_RECORDING: 'STOP_CONSOLE_RECORDING',
+  START_CONSOLE_RECORDING: "START_CONSOLE_RECORDING",
+  STOP_CONSOLE_RECORDING: "STOP_CONSOLE_RECORDING"
 };
 let recordingVideoId = null;
 let recordedVideoBlobs = [];
@@ -15,12 +15,15 @@ let mediaRecorder = null;
 const videoMimeType = "video/webm";
 let ports = {};
 let networkLog = null;
+let tabId = null;
 
-function startRecording(tabId) {
-  startScreenRecording(tabId);
-  // startConsoleRecording(tabId);
-  // startNetworkRecording(tabId);
-};
+function startRecording(id) {
+  tabId = id;
+
+  startScreenRecording(id);
+  startConsoleRecording(id);
+  // startNetworkRecording(id);
+}
 
 // VIDEO RECORDING START
 const startScreenRecording = tabId => {
@@ -75,7 +78,7 @@ const onVideoStreamSuccess = stream => {
   mediaRecorder.start();
 
   // Stop sharing button handler
-  stream.getVideoTracks()[0].onended = function () {
+  stream.getVideoTracks()[0].onended = function() {
     console.info("Recording has ended");
     // stopVideoRecording();
     stopRecording();
@@ -83,8 +86,8 @@ const onVideoStreamSuccess = stream => {
 };
 
 const onVideoStreamFailure = () => {
-  console.log('onVideoStreamFailure ');
-}
+  console.log("onVideoStreamFailure ");
+};
 
 const stopVideoRecording = () => {
   return new Promise((resolve, reject) => {
@@ -103,25 +106,27 @@ const stopVideoRecording = () => {
       }
     }
   });
-}
+};
 
 const getVideoDataUrl = () => {
   if (recordedVideoBlobs.length > 0) {
-    const recordedobjectURL = window.URL.createObjectURL(new Blob(recordedVideoBlobs, { type: videoMimeType }));
-    // console.log('recordedobjectURL, ', recordedobjectURL)
-    // // Creates a invisible anchor tag and downloads video.
-    // var a = document.createElement('a');
-    // document.body.appendChild(a);
-    // a.style = 'display: none';
-    // a.href = recordedobjectURL;
-    // a.download = 'screenrecording.webm';
-    // a.click();
-    // window.URL.revokeObjectURL(recordedobjectURL);
+    const recordedobjectURL = window.URL.createObjectURL(
+      new Blob(recordedVideoBlobs, { type: videoMimeType })
+    );
+    console.log("recordedobjectURL, ", recordedobjectURL);
+    // Creates a invisible anchor tag and downloads video.
+    var a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    a.href = recordedobjectURL;
+    a.download = "screenrecording.webm";
+    a.click();
+    window.URL.revokeObjectURL(recordedobjectURL);
     return recordedobjectURL;
   }
-}
+};
 
-const stopRecording = () => {
+function stopRecording() {
   // stopConsoleRecording().then(logs => {
 
   //   const data  = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(logs));
@@ -133,40 +138,62 @@ const stopRecording = () => {
   //   stopVideoRecording();
   // });
 
-
   stopNetworkRecording().then(networkLog => {
-    console.log('Network log', networkLog);
-    const data = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(networkLog));
-    const a = document.createElement('a');
-    a.href = 'data:' + data;
-    a.download = 'network-logs.txt';
+    console.log("Network log", networkLog);
+    const data =
+      "text/json;charset=utf-8," +
+      encodeURIComponent(JSON.stringify(networkLog));
+    const a = document.createElement("a");
+    a.href = "data:" + data;
+    a.download = "network-logs.txt";
     a.click();
     networkLog = null;
-    stopVideoRecording().then((videoObjectUrl) => {
-      chrome.tabs.create({ url: 'edit.html' });
+    stopVideoRecording().then(videoObjectUrl => {
+      // chrome.tabs.create({ url: 'edit.html' });
+
+      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        stopConsoleRecording(tabId).then(consoleLogs => {
+          tabId = null;
+          console.log("Console logs ", consoleLogs);
+          console.log("Network log", networkLog);
+          const data =
+            "text/json;charset=utf-8," +
+            encodeURIComponent(JSON.stringify(consoleLogs));
+          const a = document.createElement("a");
+          a.href = "data:" + data;
+          a.download = "console-logs.txt";
+          a.click();
+        });
+      });
     });
   });
 }
 
 // CONSOLE RECORDING START
-const startConsoleRecording = () => {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { action: constants.START_CONSOLE_RECORDING }, (response) => {
+const startConsoleRecording = tabId => {
+  // chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  chrome.tabs.sendMessage(
+    tabId,
+    { action: constants.START_CONSOLE_RECORDING },
+    response => {
       console.log(response);
-    });
-  });
-}
+    }
+  );
+  // });
+};
 
-const stopConsoleRecording = () => {
+const stopConsoleRecording = tabId => {
   return new Promise((res, rej) => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { action: constants.STOP_CONSOLE_RECORDING }, (response) => {
+    chrome.tabs.sendMessage(
+      tabId,
+      { action: constants.STOP_CONSOLE_RECORDING },
+      response => {
         console.log(response);
         res(response);
-      });
-    });
+      }
+    );
   });
-}
+};
 
 // const startNetworkRecording = (tabid) => {
 //   // chrome.webRequest.onCompleted.addListener(object => {
@@ -187,40 +214,42 @@ const stopConsoleRecording = () => {
 // }
 
 const stopNetworkRecording = () => {
-  ports['devtools'].postMessage({ source: 'background', action: 'getNetworkHar' });
+  ports["devtools"].postMessage({
+    source: "background",
+    action: "getNetworkHar"
+  });
   return new Promise((resolve, reject) => {
     const networkLogListener = window.setInterval(() => {
-      console.log('Checking if network is recevied');
+      console.log("Checking if network is recevied");
       if (networkLog) {
-        console.log('Network is received');
+        console.log("Network is received");
         resolve(networkLog);
         window.clearInterval(networkLogListener);
       }
     }, 100);
-
   });
-}
+};
 
 const handleDevtoolsMessages = message => {
   switch (message.action) {
-    case 'setNetworkLog':
-      console.log('Messages - - - - ', message);
+    case "setNetworkLog":
+      console.log("Messages - - - - ", message);
       networkLog = message.message;
       break;
     default:
-      console.log('Unhandled message');
+      console.log("Unhandled message");
   }
-}
+};
 
 chrome.runtime.onConnect.addListener(port => {
   ports = { ...ports, [`${port.name}`]: port };
   port.onMessage.addListener(message => {
     switch (port.name) {
-      case 'devtools':
+      case "devtools":
         handleDevtoolsMessages(message);
         break;
       default:
-        console.log('Unhandled port connection');
+        console.log("Unhandled port connection");
     }
   });
 });
