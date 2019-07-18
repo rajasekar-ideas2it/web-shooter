@@ -18,7 +18,10 @@
   font-size: calc(10px + 2vmin);
   color: white;
 }
-
+.network {
+  overflow: auto;
+  height: calc(100vh - 319px);
+}
 .App-link {
   color: #61dafb;
 }
