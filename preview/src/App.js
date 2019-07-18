@@ -5555,7 +5555,9 @@ export default class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      activeKey: "request"
+      activeKey: "request",
+      currentPlaybackTime: 0,
+      recordingStartedDateTime: "2019-07-18T04:21:45.497Z"
     };
   }
 
@@ -5565,23 +5567,55 @@ export default class App extends React.Component {
     });
   };
 
+  onTimeUpdate = currentPlaybackTime => {
+    this.setState({
+      currentPlaybackTime
+    });
+  };
+
   render() {
-    const { activeKey } = this.state;
+    const {
+      activeKey,
+      currentPlaybackTime,
+      recordingStartedDateTime
+    } = this.state;
     const ActiveComponent = components[activeKey];
     return (
       <div>
         <Container fluid>
           <Row className="vh-100">
-            <Col xs lg="6" className="overflow-auto h-50 border-top border-right">
-              <Video />
+            <Col
+              xs
+              lg="6"
+              className="overflow-auto h-50 border-top border-right"
+            >
+              <Video onTimeUpdate={this.onTimeUpdate} />
             </Col>
-            <Col xs lg="6" className="overflow-auto h-50 border-top border-right py-2">
-              <Console />
+            <Col
+              xs
+              lg="6"
+              className="overflow-auto h-50 border-top border-right py-2"
+            >
+              <Console
+                currentPlaybackTime={currentPlaybackTime}
+                recordingStartedDateTime={recordingStartedDateTime}
+              />
             </Col>
-            <Col xs lg="6" className="overflow-auto h-50 border-top border-right py-2">
-              <Network />
+            <Col
+              xs
+              lg="6"
+              className="overflow-auto h-50 border-top border-right py-2"
+            >
+              <Network
+                currentPlaybackTime={currentPlaybackTime}
+                recordingStartedDateTime={recordingStartedDateTime}
+              />
             </Col>
-            <Col xs lg="6" className="overflow-auto h-50 border-top border-right">
+            <Col
+              xs
+              lg="6"
+              className="overflow-auto h-50 border-top border-right"
+            >
               <Row className="networkTabs">
                 <Nav
                   variant="tabs"
