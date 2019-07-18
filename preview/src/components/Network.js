@@ -1768,7 +1768,11 @@ const data = [
   }
 ];
 function Network(props) {
-  const { currentPlaybackTime, recordingStartedDateTime } = props;
+  const {
+    currentPlaybackTime,
+    recordingStartedDateTime,
+    setCurrentPlaybackTime
+  } = props;
   return (
     // <div>NETWORK</div>
     <Timeline>
@@ -1776,18 +1780,27 @@ function Network(props) {
         return (
           <TimelineEvent
             style={{ wordBreak: "break-word" }}
-            contentStyle={{ backgroundColor: (new Date(network.startedDateTime).getTime() -
-              new Date(recordingStartedDateTime).getTime()) /
-              1000 <
-            currentPlaybackTime ? '#e2e3e5' : '' }}
+            contentStyle={{
+              backgroundColor:
+                (new Date(network.startedDateTime).getTime() -
+                  new Date(recordingStartedDateTime).getTime()) /
+                  1000 <
+                currentPlaybackTime
+                  ? "#e2e3e5"
+                  : ""
+            }}
             title="Request"
             icon={
               <i className="fa fa-external-link-square" aria-hidden="true" />
             }
+            onClick={() =>
+              setCurrentPlaybackTime(
+                (new Date(network.startedDateTime).getTime() -
+                  new Date(recordingStartedDateTime).getTime()) /
+                  1000
+              )
+            }
           >
-            {/* {
-              ? "Called"
-              : ""} */}
             {network.request.url}
           </TimelineEvent>
         );

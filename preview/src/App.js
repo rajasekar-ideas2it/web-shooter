@@ -5573,6 +5573,14 @@ export default class App extends React.Component {
     });
   };
 
+  setCurrentPlaybackTime = currentPlaybackTime => {
+    const videoElement = document.getElementById('video');
+    videoElement.currentTime = currentPlaybackTime;
+    this.setState({
+      currentPlaybackTime
+    });
+  };
+
   render() {
     const {
       activeKey,
@@ -5589,7 +5597,7 @@ export default class App extends React.Component {
               lg="6"
               className="overflow-auto h-50 border-top border-right"
             >
-              <Video onTimeUpdate={this.onTimeUpdate} />
+              <Video onTimeUpdate={this.onTimeUpdate} currentPlaybackTime={currentPlaybackTime} />
             </Col>
             <Col
               xs
@@ -5609,6 +5617,7 @@ export default class App extends React.Component {
               <Network
                 currentPlaybackTime={currentPlaybackTime}
                 recordingStartedDateTime={recordingStartedDateTime}
+                setCurrentPlaybackTime={this.setCurrentPlaybackTime}
               />
             </Col>
             <Col
