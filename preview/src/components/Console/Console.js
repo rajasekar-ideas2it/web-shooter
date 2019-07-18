@@ -21,7 +21,8 @@ const logs = [
     dateTime: "2019-07-18T04:21:59.497Z",
     type: "error",
     message: [
-      'Join us for the upcoming webinar, "Enterprise JavaScript done right: the tools you love, the security you need."Sign up here »'
+      'Join us for the upcoming webinar, "Enterprise JavaScript done right: the tools you love, the security you need."Sign up here »',
+      'Error: dscsdsd\\n    at <anonymous>:1:15'
     ]
   },
   {
@@ -76,10 +77,6 @@ export default class Console extends React.Component {
           isMulti
           className="w-50"
         />
-        {/*
-            // <div>
-               {JSON.stringify(log)} 
-              // </div>*/}
         <div className="logs">
           {logs &&
             logs.map(log =>
@@ -100,7 +97,6 @@ export default class Console extends React.Component {
 }
 
 function Log({ log: { type, message, dateTime }, recordingStartedDateTime, currentPlaybackTime }) {
-  debugger
   return (
     <div
       className={`message ${logClass[type]} ${
