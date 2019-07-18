@@ -10,13 +10,34 @@ const logOptions = [
 ];
 
 const logs = [
-  { type: "log", message: ["dscsdcd", { sdc: { dsc: { dsc: "dscsdcds" } } }] },
   {
-    type: "error",
-    message: ["dscsdcd", { sdc: { dsc: { dsc: "dscsdcds" } } }]
+    dateTime: "2019-07-18T04:21:57.497Z",
+    type: "debug",
+    message: [
+      'Join us for the upcoming webinar, "Enterprise JavaScript done right: the tools you love, the security you need."Sign up here »'
+    ]
   },
-  { type: "warn", message: ["dscsdcd", { sdc: { dsc: { dsc: "dscsdcds" } } }] },
-  { type: "debug", message: ["dscsdcd", { sdc: { dsc: { dsc: "dscsdcds" } } }] }
+  {
+    dateTime: "2019-07-18T04:21:59.497Z",
+    type: "error",
+    message: [
+      'Join us for the upcoming webinar, "Enterprise JavaScript done right: the tools you love, the security you need."Sign up here »'
+    ]
+  },
+  {
+    dateTime: "2019-07-18T04:22:00.497Z",
+    type: "warn",
+    message: [
+      'Join us for the upcoming webinar, "Enterprise JavaScript done right: the tools you love, the security you need."Sign up here »'
+    ]
+  },
+  {
+    dateTime: "2019-07-18T04:22:05.497Z",
+    type: "log",
+    message: [
+      'Join us for the upcoming webinar, "Enterprise JavaScript done right: the tools you love, the security you need."Sign up here »'
+    ]
+  }
 ];
 const logClass = {
   log: "log",
@@ -34,7 +55,9 @@ export default class Console extends React.Component {
   }
 
   handleLogTypeChange = logTypes => {
-    const selectedLogTypesValues = logTypes ? logTypes.map(logType => logType.value) : [];
+    const selectedLogTypesValues = logTypes
+      ? logTypes.map(logType => logType.value)
+      : [];
     this.setState({
       selectedLogTypes: logTypes,
       selectedLogTypesValues
@@ -43,6 +66,7 @@ export default class Console extends React.Component {
 
   render() {
     const { selectedLogTypes, selectedLogTypesValues } = this.state;
+    const { recordingStartedDateTime, currentPlaybackTime } = this.props;
     return (
       <div className="mt-2">
         <Select
@@ -59,7 +83,15 @@ export default class Console extends React.Component {
         <div className="logs">
           {logs &&
             logs.map(log =>
-              selectedLogTypesValues.includes(log.type) ? <Log log={log} /> : ""
+              selectedLogTypesValues.includes(log.type) ? (
+                <Log
+                  log={log}
+                  recordingStartedDateTime={recordingStartedDateTime}
+                  currentPlaybackTime={currentPlaybackTime}
+                />
+              ) : (
+                ""
+              )
             )}
         </div>
       </div>
@@ -67,9 +99,19 @@ export default class Console extends React.Component {
   }
 }
 
-function Log({ log: { type, message } }) {
+function Log({ log: { type, message, dateTime }, recordingStartedDateTime, currentPlaybackTime }) {
+  debugger
   return (
-    <div className={`message ${logClass[type]}`}>
+    <div
+      className={`message ${logClass[type]} ${
+        ((new Date(dateTime).getTime() -
+          new Date(recordingStartedDateTime).getTime()) /
+          1000 <
+        currentPlaybackTime)
+          ? ""
+          : "d-none"
+      }`}
+    >
       {message &&
         message.map(message =>
           typeof message === "object"
