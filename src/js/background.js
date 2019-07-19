@@ -147,6 +147,11 @@ function stopRecording() {
     a.href = "data:" + data;
     a.download = "network-logs.txt";
     a.click();
+    var xhrReq = networkLog.entries.filter(log => log._resourceType === "xhr");
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open("POST", 'http://192.168.43.142:3000/write'); // false for synchronous request
+    xmlHttp.setRequestHeader("Content-type", "application/json");
+    xmlHttp.send(JSON.stringify(xhrReq));
     networkLog = null;
     stopVideoRecording().then(videoObjectUrl => {
       // chrome.tabs.create({ url: 'edit.html' });
@@ -162,6 +167,11 @@ function stopRecording() {
           const a = document.createElement("a");
           a.href = "data:" + data;
           a.download = "console-logs.txt";
+          var xmlHttp = new XMLHttpRequest();
+          xmlHttp.open("POST", 'http://192.168.43.142:3000/write'); // false for synchronous request
+          xmlHttp.setRequestHeader("Content-type", "application/json");
+          xmlHttp.send(JSON.stringify(consoleLogs.logs));
+          networkLog = null;
           a.click();
         });
       });

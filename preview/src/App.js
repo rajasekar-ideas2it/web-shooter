@@ -5557,8 +5557,28 @@ export default class App extends React.Component {
     this.state = {
       activeKey: "request",
       currentPlaybackTime: 0,
-      recordingStartedDateTime: "2019-07-18T04:21:45.497Z"
+      recordingStartedDateTime: "2019-07-18T04:21:45.497Z",
+      networkLogs: []
     };
+  }
+
+  componentDidMount() {
+    const networkLogs = fetch('http://192.168.43.142:3000/getLogs', {
+      method: 'GET', // *GET, POST, PUT, DELETE, etc.
+      cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+      credentials: 'same-origin', // include, *same-origin, omit
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    }
+    )
+    .then(res => res.json())
+    .then((data) => {
+      this.setState({ contacts: data })
+    })
+    .catch(console.log)
+    this.setState({ networkLogs });
+    console.log(networkLogs);
   }
 
   handleSelect = eventKey => {
