@@ -28,7 +28,6 @@ const formattedMessages = messages => {
 console.log = function() {
   const consoleLogs = getConsoleLogs();
   consoleLogs.push({ dateTime: new Date(), type: 'log', message: formattedMessages(Array.from(arguments)) });
-  debugger
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdlog.apply(console, arguments);
 };

@@ -1771,7 +1771,7 @@ function Network(props) {
   const {
     currentPlaybackTime,
     recordingStartedDateTime,
-    setCurrentPlaybackTime
+    setCurrentRequest,
   } = props;
   return (
     // <div>NETWORK</div>
@@ -1787,17 +1787,19 @@ function Network(props) {
                   1000 <
                 currentPlaybackTime
                   ? "#e2e3e5"
-                  : ""
+                  : "",
+              cursor: 'pointer'
             }}
             title="Request"
             icon={
               <i className="fa fa-external-link-square" aria-hidden="true" />
             }
             onClick={() =>
-              setCurrentPlaybackTime(
+              setCurrentRequest(
                 (new Date(network.startedDateTime).getTime() -
                   new Date(recordingStartedDateTime).getTime()) /
-                  1000
+                  1000,
+                  network
               )
             }
           >

@@ -9,37 +9,6 @@ const logOptions = [
   { value: "error", label: "Error" }
 ];
 
-const logs = [
-  {
-    dateTime: "2019-07-18T04:21:57.497Z",
-    type: "debug",
-    message: [
-      'Join us for the upcoming webinar, "Enterprise JavaScript done right: the tools you love, the security you need."Sign up here »'
-    ]
-  },
-  {
-    dateTime: "2019-07-18T04:21:59.497Z",
-    type: "error",
-    message: [
-      'Join us for the upcoming webinar, "Enterprise JavaScript done right: the tools you love, the security you need."Sign up here »',
-      'Error: dscsdsd\\n    at <anonymous>:1:15'
-    ]
-  },
-  {
-    dateTime: "2019-07-18T04:22:00.497Z",
-    type: "warn",
-    message: [
-      'Join us for the upcoming webinar, "Enterprise JavaScript done right: the tools you love, the security you need."Sign up here »'
-    ]
-  },
-  {
-    dateTime: "2019-07-18T04:22:05.497Z",
-    type: "log",
-    message: [
-      'Join us for the upcoming webinar, "Enterprise JavaScript done right: the tools you love, the security you need."Sign up here »'
-    ]
-  }
-];
 const logClass = {
   log: "log",
   debug: "debug",
@@ -67,7 +36,7 @@ export default class Console extends React.Component {
 
   render() {
     const { selectedLogTypes, selectedLogTypesValues } = this.state;
-    const { recordingStartedDateTime, currentPlaybackTime } = this.props;
+    const { recordingStartedDateTime, currentPlaybackTime, logs } = this.props;
     return (
       <div className="mt-2">
         <Select
@@ -75,7 +44,7 @@ export default class Console extends React.Component {
           onChange={this.handleLogTypeChange}
           options={logOptions}
           isMulti
-          className="w-50"
+          className="w-100"
         />
         <div className="logs">
           {logs &&
