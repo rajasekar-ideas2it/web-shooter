@@ -149,7 +149,7 @@ function stopRecording() {
     a.click();
     var xhrReq = networkLog.entries.filter(log => log._resourceType === "xhr");
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("POST", 'http://192.168.43.142:3000/write'); // false for synchronous request
+    xmlHttp.open("POST", 'http://192.168.1.248:3000/write'); // false for synchronous request
     xmlHttp.setRequestHeader("Content-type", "application/json");
     xmlHttp.send(JSON.stringify(xhrReq));
     networkLog = null;
@@ -168,9 +168,10 @@ function stopRecording() {
           a.href = "data:" + data;
           a.download = "console-logs.txt";
           var xmlHttp = new XMLHttpRequest();
-          xmlHttp.open("POST", 'http://192.168.43.142:3000/write'); // false for synchronous request
+          xmlHttp.open("POST", 'http://192.168.1.248:3000/write/console'); // false for synchronous request
           xmlHttp.setRequestHeader("Content-type", "application/json");
-          xmlHttp.send(JSON.stringify(consoleLogs.logs));
+          let request = JSON.parse(consoleLogs.logs)
+          xmlHttp.send(JSON.stringify(request));
           networkLog = null;
           a.click();
         });

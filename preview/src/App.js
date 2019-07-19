@@ -59,21 +59,15 @@ export default class App extends React.Component {
     };
   }
 
-  componentDidMount() {
-    const networkLogs = fetch('http://192.168.43.142:3000/getLogs', {
+  async componentDidMount() {
+    const networkLogs = await fetch('http://192.168.1.248:3000/getLogs', {
       method: 'GET', // *GET, POST, PUT, DELETE, etc.
-      cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-      credentials: 'same-origin', // include, *same-origin, omit
       headers: {
-        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
       }
-    }
-    )
-    .then(res => res.json())
-    .then((data) => {
-      this.setState({ contacts: data })
-    })
-    .catch(console.log)
+    }).then(res => res.json())
+    .catch(console.log);
     this.setState({ networkLogs });
     console.log(networkLogs);
   }
