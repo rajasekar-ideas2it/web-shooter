@@ -1,9 +1,9 @@
-console.stdlog = console.log.bind(console);
-console.stdDebug = console.debug.bind(console);
-console.stdError = console.error.bind(console);
-console.stdWarn = console.warn.bind(console);
+if (!console.stdlog) {console.stdlog = console.log.bind(console);}
+if (!console.stdDebug) {console.stdDebug = console.debug.bind(console);}
+if (!console.stdError) {console.stdError = console.error.bind(console);}
+if (!console.stdWarn) {console.stdWarn = console.warn.bind(console);}
 
-const getConsoleLogs = () => {
+function getConsoleLogs() {
   return JSON.parse(
     localStorage.getItem("consoleLogs")
       ? localStorage.getItem("consoleLogs")
@@ -11,7 +11,7 @@ const getConsoleLogs = () => {
   );
 }
 
-const formattedMessages = messages => {
+function formattedMessages(messages) {
   const formattedMessages = messages.map(message => {
     if (typeof message === 'string') {
       return message;

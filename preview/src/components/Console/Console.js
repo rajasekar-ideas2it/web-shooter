@@ -36,7 +36,7 @@ export default class Console extends React.Component {
 
   render() {
     const { selectedLogTypes, selectedLogTypesValues } = this.state;
-    const { recordingStartedDateTime, currentPlaybackTime, logs } = this.props;
+    const { recordingStartedDateTime, currentPlaybackTime, consoleLogs } = this.props;
     return (
       <div className="mt-2">
         <Select
@@ -47,8 +47,8 @@ export default class Console extends React.Component {
           className="w-100"
         />
         <div className="logs">
-          {logs &&
-            logs.map(log =>
+          {consoleLogs &&
+            consoleLogs.map(log =>
               selectedLogTypesValues.includes(log.type) ? (
                 <Log
                   log={log}

@@ -1,13 +1,13 @@
 import React from 'react';
 
-function Video({ onTimeUpdate, currentPlaybackTime }) {
+function Video({ onTimeUpdate, currentPlaybackTime, videoSrc }) {
     return (
         <div className="h-100 d-flex justify-content-center">
             <video 
                 className="h-100"
                 controls 
                 autoPlay
-                src="https://s3.amazonaws.com/codecademy-content/courses/React/react_video-fast.mp4"
+                src={videoSrc ? videoSrc : ''}
                 onTimeUpdate={event => onTimeUpdate(event.target.currentTime)}
                 id="video"
             />
