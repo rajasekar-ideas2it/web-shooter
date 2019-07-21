@@ -1,5 +1,7 @@
 .history/
 node_modules/
 dist/
+build/
+preview/build/
 package-lock.json
 .vscode/

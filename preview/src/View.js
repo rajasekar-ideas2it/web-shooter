@@ -39,6 +39,8 @@ export default class View extends React.Component {
       const networkLogsBody = await networkLogsResponse.json();
       const consoleLogsBody = await consoleLogsResponse.json();
       this.setState({ networkLogs: networkLogsBody.entries, recordingStartedDateTime: networkLogsBody.recordingStartedTime, consoleLogs: consoleLogsBody });
+      var currentColor = localStorage.getItem('channels');
+      console.log(currentColor);
     } catch (error) {
       console.log('Error', error);
     }

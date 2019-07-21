@@ -4,7 +4,7 @@
 
 "use strict";
 
-function WebRequest () {};
+function WebRequest() {};
 const constants = {
   START_CONSOLE_RECORDING: "START_CONSOLE_RECORDING",
   STOP_CONSOLE_RECORDING: "STOP_CONSOLE_RECORDING"
@@ -19,7 +19,7 @@ let networkLog = null;
 let tabId = null;
 let recordingStartedTime = null;
 var req;
-var startTime=0;
+var startTime = 0;
 
 function startRecording(id) {
   tabId = id;
@@ -142,17 +142,26 @@ async function stopRecording() {
       obj.key = (new Date).getTime();
       obj.recordingStartedTime = recordingStartedTime;
       recordingStartedTime = null;
-      console.log('obj', obj);
-      var xmlHttp = new XMLHttpRequest();
-      xmlHttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-          alert(obj.key);
-          window.open(`http://localhost:3000/view/${obj.key}`, '_blank');
-        }
-      };
-      xmlHttp.open("POST", ' https://23hq4whw41.execute-api.us-east-1.amazonaws.com/test'); // false for synchronous request
-      xmlHttp.setRequestHeader("Content-type", "application/json");
-      xmlHttp.send(JSON.stringify(obj));
+      chrome.storage.local.set({
+          'channels': obj
+        },
+        function () {
+          chrome.storage.local.get('channels', function (result) {
+            console.log(JSON.stringify(result));
+          });
+        });
+
+
+      // chrome.storage.local.set(tempmap, function () {
+      //   debugger;
+      //   console.log(obj.key);
+      //   console.log('video Saved saved');
+      //   chrome.storage.local.get(obj.key, function (result) {
+      //     debugger;
+
+      //     console.log(result);
+      //   });
+      // });
 
     }, 2000);
 }
@@ -199,11 +208,14 @@ async function stopNetworkRecording(map_var) {
   //     }
   //   }, 100);
   // });
-  var objectlist=[];
-	map_var.forEach(function(i,k){
-		objectlist.push({'requestid':k,'webReq':i});
+  var objectlist = [];
+  map_var.forEach(function (i, k) {
+    objectlist.push({
+      'requestid': k,
+      'webReq': i
+    });
   });
-	return objectlist;
+  return objectlist;
 };
 
 const handleDevtoolsMessages = message => {
@@ -236,46 +248,46 @@ chrome.runtime.onConnect.addListener(port => {
 function startNetworkRecording(tabid) {
   req = new Map();
   chrome.webRequest.onBeforeRequest.addListener(captureWebReq, {
-      urls:["<all_urls>"],
-      tabId:tabid,
-      types:["main_frame","sub_frame","xmlhttprequest"]
-    }, ['requestBody']);
-    chrome.webRequest.onBeforeSendHeaders.addListener(captureWebReq, {
-      urls:["<all_urls>"],
-      tabId:tabid,
-      types:["main_frame","sub_frame","xmlhttprequest"]
-  
-    },['requestHeaders']);
+    urls: ["<all_urls>"],
+    tabId: tabid,
+    types: ["main_frame", "sub_frame", "xmlhttprequest"]
+  }, ['requestBody']);
+  chrome.webRequest.onBeforeSendHeaders.addListener(captureWebReq, {
+    urls: ["<all_urls>"],
+    tabId: tabid,
+    types: ["main_frame", "sub_frame", "xmlhttprequest"]
+
+  }, ['requestHeaders']);
   chrome.webRequest.onHeadersReceived.addListener(captureWebReq, {
-      urls:["<all_urls>"],
-      tabId:tabid,
-      types:["main_frame","sub_frame","xmlhttprequest"]
-    }, ['responseHeaders']);
+    urls: ["<all_urls>"],
+    tabId: tabid,
+    types: ["main_frame", "sub_frame", "xmlhttprequest"]
+  }, ['responseHeaders']);
 }
 
 function captureWebReq(details) {
-	if(!req.get(details.requestId)) {	
-		var temp=new WebRequest();
-		if(details.requestBody) temp.requestBody=details.requestBody;
-		if(details.method) temp.method=details.method;
-		if(details.url) temp.url=details.url;
-		temp.requesttime=(new Date().valueOf()-startTime)/1000;
-		if(details.responseHeaders) temp.responseHeaders=details.responseHeaders;
-		if(details.statusCode) temp.statusCode=details.statusCode;
-		if(details.statusLine) temp.statusLine=details.statusLine;
-		req.set(details.requestId,temp);
-	} else {
-		if(details.requestBody)
-			req.get(details.requestId).requestBody=details.requestBody;
-		if(details.requestHeaders)
-			req.get(details.requestId).requestHeaders=details.requestHeaders;
-		if(details.responseHeaders)
-			req.get(details.requestId).responseHeaders=details.responseHeaders;
-		if(details.statusCode) {
-			req.get(details.requestId).statusCode=details.statusCode;
-			req.get(details.requestId).responseTime=(new Date().valueOf()-startTime)/1000;
-		}
-		if(details.statusLine)
-			req.get(details.requestId).statusLine=details.statusLine;
+  if (!req.get(details.requestId)) {
+    var temp = new WebRequest();
+    if (details.requestBody) temp.requestBody = details.requestBody;
+    if (details.method) temp.method = details.method;
+    if (details.url) temp.url = details.url;
+    temp.requesttime = (new Date().valueOf() - startTime) / 1000;
+    if (details.responseHeaders) temp.responseHeaders = details.responseHeaders;
+    if (details.statusCode) temp.statusCode = details.statusCode;
+    if (details.statusLine) temp.statusLine = details.statusLine;
+    req.set(details.requestId, temp);
+  } else {
+    if (details.requestBody)
+      req.get(details.requestId).requestBody = details.requestBody;
+    if (details.requestHeaders)
+      req.get(details.requestId).requestHeaders = details.requestHeaders;
+    if (details.responseHeaders)
+      req.get(details.requestId).responseHeaders = details.responseHeaders;
+    if (details.statusCode) {
+      req.get(details.requestId).statusCode = details.statusCode;
+      req.get(details.requestId).responseTime = (new Date().valueOf() - startTime) / 1000;
+    }
+    if (details.statusLine)
+      req.get(details.requestId).statusLine = details.statusLine;
   }
 };
