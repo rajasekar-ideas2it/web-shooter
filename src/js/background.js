@@ -4,6 +4,7 @@
 
 "use strict";
 
+function WebRequest () {};
 const constants = {
   START_CONSOLE_RECORDING: "START_CONSOLE_RECORDING",
   STOP_CONSOLE_RECORDING: "STOP_CONSOLE_RECORDING"
@@ -17,13 +18,15 @@ let ports = {};
 let networkLog = null;
 let tabId = null;
 let recordingStartedTime = null;
+var req;
+var startTime=0;
 
 function startRecording(id) {
   tabId = id;
 
   startScreenRecording(id);
   startConsoleRecording(id);
-  // startNetworkRecording(id);
+  startNetworkRecording(id);
 }
 
 // VIDEO RECORDING START
@@ -128,7 +131,7 @@ async function stopRecording() {
   await stopVideoRecording();
   setTimeout(
     async () => {
-      const networkLog = await stopNetworkRecording();
+      const networkLog = await stopNetworkRecording(req);
       const consoleLog = await stopConsoleRecording(tabId);
       const video = await getVideoDataUrl();
       var obj = {};
@@ -181,21 +184,26 @@ const stopConsoleRecording = async (tabId) => {
   });
 };
 
-async function stopNetworkRecording() {
-  ports["devtools"].postMessage({
-    source: "background",
-    action: "getNetworkHar"
+async function stopNetworkRecording(map_var) {
+  // ports["devtools"].postMessage({
+  //   source: "background",
+  //   action: "getNetworkHar"
+  // });
+  // return new Promise((resolve, reject) => {
+  //   const networkLogListener = window.setInterval(() => {
+  //     console.log("Checking if network is recevied");
+  //     if (networkLog) {
+  //       console.log("Network is received");
+  //       resolve(networkLog);
+  //       window.clearInterval(networkLogListener);
+  //     }
+  //   }, 100);
+  // });
+  var objectlist=[];
+	map_var.forEach(function(i,k){
+		objectlist.push({'requestid':k,'webReq':i});
   });
-  return new Promise((resolve, reject) => {
-    const networkLogListener = window.setInterval(() => {
-      console.log("Checking if network is recevied");
-      if (networkLog) {
-        console.log("Network is received");
-        resolve(networkLog);
-        window.clearInterval(networkLogListener);
-      }
-    }, 100);
-  });
+	return objectlist;
 };
 
 const handleDevtoolsMessages = message => {
@@ -224,3 +232,50 @@ chrome.runtime.onConnect.addListener(port => {
     }
   });
 });
+
+function startNetworkRecording(tabid) {
+  req = new Map();
+  chrome.webRequest.onBeforeRequest.addListener(captureWebReq, {
+      urls:["<all_urls>"],
+      tabId:tabid,
+      types:["main_frame","sub_frame","xmlhttprequest"]
+    }, ['requestBody']);
+    chrome.webRequest.onBeforeSendHeaders.addListener(captureWebReq, {
+      urls:["<all_urls>"],
+      tabId:tabid,
+      types:["main_frame","sub_frame","xmlhttprequest"]
+  
+    },['requestHeaders']);
+  chrome.webRequest.onHeadersReceived.addListener(captureWebReq, {
+      urls:["<all_urls>"],
+      tabId:tabid,
+      types:["main_frame","sub_frame","xmlhttprequest"]
+    }, ['responseHeaders']);
+}
+
+function captureWebReq(details) {
+	if(!req.get(details.requestId)) {	
+		var temp=new WebRequest();
+		if(details.requestBody) temp.requestBody=details.requestBody;
+		if(details.method) temp.method=details.method;
+		if(details.url) temp.url=details.url;
+		temp.requesttime=(new Date().valueOf()-startTime)/1000;
+		if(details.responseHeaders) temp.responseHeaders=details.responseHeaders;
+		if(details.statusCode) temp.statusCode=details.statusCode;
+		if(details.statusLine) temp.statusLine=details.statusLine;
+		req.set(details.requestId,temp);
+	} else {
+		if(details.requestBody)
+			req.get(details.requestId).requestBody=details.requestBody;
+		if(details.requestHeaders)
+			req.get(details.requestId).requestHeaders=details.requestHeaders;
+		if(details.responseHeaders)
+			req.get(details.requestId).responseHeaders=details.responseHeaders;
+		if(details.statusCode) {
+			req.get(details.requestId).statusCode=details.statusCode;
+			req.get(details.requestId).responseTime=(new Date().valueOf()-startTime)/1000;
+		}
+		if(details.statusLine)
+			req.get(details.requestId).statusLine=details.statusLine;
+  }
+};
