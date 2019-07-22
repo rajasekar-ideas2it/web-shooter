@@ -78,6 +78,7 @@ export default class View extends React.Component {
     } = this.state;
     const ActiveComponent = components[activeKey];
     const { match: { params: { bugId } } } = this.props;
+    const consoleMessages = consoleLogs.logs ? JSON.parse(consoleLogs.logs) : [];
     return (
       <div>
         <Container fluid>
@@ -97,7 +98,7 @@ export default class View extends React.Component {
               <Console
                 currentPlaybackTime={currentPlaybackTime}
                 recordingStartedDateTime={recordingStartedDateTime}
-                logs={consoleLogs}
+                consoleLogs={consoleMessages}
               />
             </Col>
             <Col

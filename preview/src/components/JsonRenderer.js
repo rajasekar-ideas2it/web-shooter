@@ -5,7 +5,7 @@ function JsonRenderer(props) {
   const { json } = props;
   return (
     <div>
-      {Object.keys(json).map(key => (
+      {json && Object.keys(json).map(key => (
         <div className="my-1 d-flex">
           <span className="font-weight-bold mr-2">{`${key}: `}</span>
           {typeof json[key] === "object" ? (

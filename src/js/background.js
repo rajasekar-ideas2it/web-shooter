@@ -21,6 +21,10 @@ let recordingStartedTime = null;
 var req;
 var startTime=0;
 
+var requests = [];
+var requestsMap = {};
+var pages = {};
+
 function startRecording(id) {
   tabId = id;
 
@@ -131,7 +135,7 @@ async function stopRecording() {
   await stopVideoRecording();
   setTimeout(
     async () => {
-      const networkLog = await stopNetworkRecording(req);
+      const networkLog = await stopNetworkRecording();
       const consoleLog = await stopConsoleRecording(tabId);
       const video = await getVideoDataUrl();
       var obj = {};
@@ -184,26 +188,28 @@ const stopConsoleRecording = async (tabId) => {
   });
 };
 
-async function stopNetworkRecording(map_var) {
+async function stopNetworkRecording() {
   // ports["devtools"].postMessage({
   //   source: "background",
   //   action: "getNetworkHar"
   // });
   // return new Promise((resolve, reject) => {
   //   const networkLogListener = window.setInterval(() => {
-  //     console.log("Checking if network is recevied");
   //     if (networkLog) {
-  //       console.log("Network is received");
   //       resolve(networkLog);
   //       window.clearInterval(networkLogListener);
   //     }
   //   }, 100);
   // });
-  var objectlist=[];
-	map_var.forEach(function(i,k){
-		objectlist.push({'requestid':k,'webReq':i});
-  });
-	return objectlist;
+  chrome.debugger.detach({ tabId: tabId });
+  requestsMap = {};
+  var body = {
+    entries: requests.filter(obj => obj.type === 'XHR'),
+    pages: Object.keys(pages)
+  };
+  requests = [];
+  pages = {};
+  return body;
 };
 
 const handleDevtoolsMessages = message => {
@@ -234,48 +240,82 @@ chrome.runtime.onConnect.addListener(port => {
 });
 
 function startNetworkRecording(tabid) {
-  req = new Map();
-  chrome.webRequest.onBeforeRequest.addListener(captureWebReq, {
-      urls:["<all_urls>"],
-      tabId:tabid,
-      types:["main_frame","sub_frame","xmlhttprequest"]
-    }, ['requestBody']);
-    chrome.webRequest.onBeforeSendHeaders.addListener(captureWebReq, {
-      urls:["<all_urls>"],
-      tabId:tabid,
-      types:["main_frame","sub_frame","xmlhttprequest"]
-
-    },['requestHeaders']);
-  chrome.webRequest.onHeadersReceived.addListener(captureWebReq, {
-      urls:["<all_urls>"],
-      tabId:tabid,
-      types:["main_frame","sub_frame","xmlhttprequest"]
-    }, ['responseHeaders']);
+    chrome.debugger.attach({ //debug at current tab
+      tabId: tabid
+    }, "1.0", onAttach.bind(null, tabid));
 }
 
-function captureWebReq(details) {
-	if(!req.get(details.requestId)) {
-		var temp=new WebRequest();
-		if(details.requestBody) temp.requestBody=details.requestBody;
-		if(details.method) temp.method=details.method;
-		if(details.url) temp.url=details.url;
-		temp.requesttime=(new Date().valueOf()-startTime)/1000;
-		if(details.responseHeaders) temp.responseHeaders=details.responseHeaders;
-		if(details.statusCode) temp.statusCode=details.statusCode;
-		if(details.statusLine) temp.statusLine=details.statusLine;
-		req.set(details.requestId,temp);
-	} else {
-		if(details.requestBody)
-			req.get(details.requestId).requestBody=details.requestBody;
-		if(details.requestHeaders)
-			req.get(details.requestId).requestHeaders=details.requestHeaders;
-		if(details.responseHeaders)
-			req.get(details.requestId).responseHeaders=details.responseHeaders;
-		if(details.statusCode) {
-			req.get(details.requestId).statusCode=details.statusCode;
-			req.get(details.requestId).responseTime=(new Date().valueOf()-startTime)/1000;
-		}
-		if(details.statusLine)
-			req.get(details.requestId).statusLine=details.statusLine;
+function onAttach(tabId) {
+  chrome.debugger.sendCommand({
+    tabId: tabId
+  }, "Network.enable");
+  chrome.debugger.sendCommand({
+    tabId: tabId
+  }, "Network.clearBrowserCache");
+  chrome.debugger.onEvent.addListener(allEventHandler);
+}
+
+function allEventHandler(debuggeeId, message, params) {
+  var request = requestsMap[params.requestId];
+  if (!request) {
+    request = {
+      startedDateTime: new Date().toISOString()
+    };
+    requestsMap[params.requestId] = request;
+    requests.push(request);
   }
-};
+  switch (message) {
+    case "Network.responseReceived":
+      request.received = new Date().toISOString();
+      request.response = {
+        headers: params.response.headers,
+        serverIPAddress: params.response.remoteIPAddress,
+        status: params.response.status,
+        statusText: params.response.statusText
+      };
+      break;
+    case "Network.requestWillBeSent":
+      if (params.redirectResponse && request.request) {
+        var location = params.redirectResponse.headers['Location'] || params.redirectResponse.headers['location'];
+        if (location && request.request.url.endsWith(location)) {
+          break;
+        }
+        request.response = {
+          headers: params.redirectResponse.headers,
+          serverIPAddress: params.redirectResponse.remoteIPAddress,
+          status: params.redirectResponse.status,
+          statusText: params.redirectResponse.statusText,
+          body: {
+            base64Encoded: false,
+            body: params.redirectResponse.statusText
+          }
+        };
+        request = {
+          created: new Date().toISOString()
+        };
+        requests.push(request);
+        requestsMap[params.requestId] = request;
+      }
+      request.request = params.request;
+      request.initiator = params.initiator;
+      request.type = params.type;
+      request.documentUrl = params.documentURL;
+      if (request.documentUrl) {
+        pages[request.documentUrl] = true;
+      }
+      break;
+    case "Network.dataReceived":
+      break;
+    case "Network.loadingFinished":
+      chrome.debugger.sendCommand({
+        tabId: debuggeeId.tabId
+      }, "Network.getResponseBody", {
+          "requestId": params.requestId
+        }, function (response) {
+          if (response) {
+            request.response.body = response;
+          }
+        });
+      break;
+  }
+}
