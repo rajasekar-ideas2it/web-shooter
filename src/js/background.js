@@ -147,10 +147,10 @@ async function stopRecording() {
       xmlHttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
           alert(obj.key);
-          window.open(`http://localhost:3000/view/${obj.key}`, '_blank');
+          window.open(`http://web-shooter-preview.s3-website-us-east-1.amazonaws.com/view/${obj.key}`, '_blank');
         }
       };
-      xmlHttp.open("POST", ' https://23hq4whw41.execute-api.us-east-1.amazonaws.com/test'); // false for synchronous request
+      xmlHttp.open("POST", ' http://ec2-3-95-132-124.compute-1.amazonaws.com:3000/upload'); // false for synchronous request
       xmlHttp.setRequestHeader("Content-type", "application/json");
       xmlHttp.send(JSON.stringify(obj));
 
@@ -244,7 +244,7 @@ function startNetworkRecording(tabid) {
       urls:["<all_urls>"],
       tabId:tabid,
       types:["main_frame","sub_frame","xmlhttprequest"]
-  
+
     },['requestHeaders']);
   chrome.webRequest.onHeadersReceived.addListener(captureWebReq, {
       urls:["<all_urls>"],
@@ -254,7 +254,7 @@ function startNetworkRecording(tabid) {
 }
 
 function captureWebReq(details) {
-	if(!req.get(details.requestId)) {	
+	if(!req.get(details.requestId)) {
 		var temp=new WebRequest();
 		if(details.requestBody) temp.requestBody=details.requestBody;
 		if(details.method) temp.method=details.method;
