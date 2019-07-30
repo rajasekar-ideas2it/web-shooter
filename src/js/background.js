@@ -26,6 +26,7 @@ var requestsMap = {};
 var pages = {};
 var loading = false;
 var intervalId;
+var iconIndex = 0;
 
 function startRecording(id) {
   tabId = id;
@@ -132,27 +133,20 @@ const getVideoDataUrl = async () => {
   });
 };
 
-function setBadgeBackground() {
-  if (loading) {
-    var count = 0;
-    chrome.browserAction.setBadgeBackgroundColor({color:[190, 190, 190, 230]});
-    function setBadge() {
-      count = count + 1;
-      chrome.browserAction.setBadgeText({text: count.toString()})
-    }
-    intervalId = setInterval(setBadge, 1000);
-  } else {
-    clearInterval(intervalId);
-    chrome.browserAction.setBadgeText({ text: "" });
-    intervalId = null;
-  }
+function updateIcon() {
+  var iconName = loading ?
+          './assets/images/cloud-upload64-' + ((iconIndex % 2)+1) + '.png' : './assets/images/bug16.png';
+    chrome.browserAction.setIcon({path: iconName});
 }
 
 async function stopRecording() {
 
   await stopVideoRecording();
   loading = true;
-  setBadgeBackground();
+  intervalId = setInterval(function() {
+    iconIndex++;
+    updateIcon();
+  }, 500);
   setTimeout(
     async () => {
       const networkLog = await stopNetworkRecording();
@@ -171,7 +165,8 @@ async function stopRecording() {
       xmlHttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
           loading = false;
-          setBadgeBackground();
+          updateIcon();
+          clearInterval(intervalId)
           alert(obj.key);
           window.open(`http://web-shooter-preview.s3-website-us-east-1.amazonaws.com/view/${obj.key}`, '_blank');
         }
