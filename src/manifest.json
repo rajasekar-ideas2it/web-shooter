@@ -28,7 +28,7 @@
   "options_page": "options.html",
   "devtools_page": "devtools.html",
   "background": {
-    "scripts": ["background.js"],
+    "page":"background.html",
     "persistent": true
   },
   "browser_action": {

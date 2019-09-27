@@ -3,6 +3,8 @@ if (!console.stdDebug) {console.stdDebug = console.debug.bind(console);}
 if (!console.stdError) {console.stdError = console.error.bind(console);}
 if (!console.stdWarn) {console.stdWarn = console.warn.bind(console);}
 
+console.log('logging from console.js')
+
 function getConsoleLogs() {
   return JSON.parse(
     localStorage.getItem("consoleLogs")
@@ -11,7 +13,7 @@ function getConsoleLogs() {
   );
 }
 
-function formattedMessages(messages) {
+/* function formattedMessages(messages) {
   const formattedMessages = messages.map(message => {
     if (typeof message === 'string') {
       return message;
@@ -23,13 +25,38 @@ function formattedMessages(messages) {
     return message;
   });
   return formattedMessages;
+}; */
+function formattedMessages(message) {
+  if (typeof message === 'string') {
+    return message;
+  } 
+  else if (typeof message === 'object') {
+    return JSON.stringify(message);
+  } else if (message.stack) {
+    return message.stack;
+  } 
+  // const formattedMessages = messages.map(message => {
+   
+  //   return message;
+  // });
+  // return formattedMessages;
 };
 
-console.log = function() {
+console.log = function(arguments) {
+  // console.log('calling custom console.log')
+  // alert('calling custom console.log')
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: new Date(), type: 'log', message: formattedMessages(Array.from(arguments)) });
+  // consoleLogs.push({ dateTime: new Date(), type: 'log', message: formattedMessages(Array.from(arguments)) });
+  consoleLogs.push({ dateTime: new Date(), type: 'log', message: formattedMessages(arguments) });
+
+  // console.log("arguments")
+  // console.log(arguments)
+  // console.log("consoleLogs")
+  // console.log(consoleLogs)
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
-  console.stdlog.apply(console, arguments);
+  console.stdlog.call(console, arguments);
+  // console.stdlog.apply(console, arguments);
+
 };
 
 console.debug = function() {

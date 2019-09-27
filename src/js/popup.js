@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 "use strict";
+var JSZip = require("jszip");
+
 
 const startRecordingBtn = document.getElementById("startRecordingBtn");
 
@@ -13,7 +15,23 @@ startRecordingBtn.onclick = () => {
   });
 };
 
-const stopRecordingBtn = document.getElementById("stopRecordingBtn");
+// startRecordingBtn.onclick = () => {
+  // chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+  //   const { id: currentTabId } = tabs[0];
+  //   chrome.extension.getBackgroundPage().startRecording(currentTabId);
+  // });
+// };
+
+const makeZip = document.getElementById("makeZip");
+
+makeZip.onclick = () => {
+  // chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+  //   const { id: currentTabId } = tabs[0];
+  //   chrome.extension.getBackgroundPage().stopRecording(currentTabId);
+  // });
+  zip.file("hello.txt", "Hello World\n");
+
+};
 
 // stopRecordingBtn.onclick = () => {
 //   chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {

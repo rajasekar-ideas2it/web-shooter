@@ -4,7 +4,7 @@
 
 "use strict";
 
-function WebRequest () {};
+function WebRequest() { };
 const constants = {
   START_CONSOLE_RECORDING: "START_CONSOLE_RECORDING",
   STOP_CONSOLE_RECORDING: "STOP_CONSOLE_RECORDING"
@@ -19,7 +19,7 @@ let networkLog = null;
 let tabId = null;
 let recordingStartedTime = null;
 var req;
-var startTime=0;
+var startTime = 0;
 
 var requests = [];
 var requestsMap = {};
@@ -28,16 +28,85 @@ var loading = false;
 var intervalId;
 var iconIndex = 0;
 
-function startRecording(id) {
-  tabId = id;
 
-  startScreenRecording(id);
-  startConsoleRecording(id);
-  startNetworkRecording(id);
-}
+
+// for screent shot
+var screenshot = {
+  content: document.createElement("canvas"),
+  data: '',
+
+  init: function () {
+    this.initEvents();
+  },
+
+  saveScreenshot: function (tabs) {
+    var image = new Image();
+    image.onload = function () {
+      var canvas = screenshot.content;
+      canvas.width = image.width;
+      canvas.height = image.height;
+      var context = canvas.getContext("2d");
+      context.drawImage(image, 0, 0);
+
+      // save the image
+      var link = document.createElement('a');
+      // link.href=window.location.href
+      let title = ''
+      if (tabs != undefined & tabs[0] != undefined)
+        title = tabs[0].title
+      link.download =  title + '_' + new Date() + ".png";
+      link.href = screenshot.content.toDataURL();
+      link.click();
+      
+      screenshot.data = '';
+    };
+    image.src = screenshot.data;
+  },
+
+  initEvents: function () {
+
+    // chrome.browserAction.onClicked.addListener(function(tab) {
+    chrome.tabs.captureVisibleTab(null, {
+      format: "png",
+      quality: 100
+    }, function (data) {
+      screenshot.data = data;
+
+      // send an alert message to webpage
+      chrome.tabs.query({
+        active: true,
+        currentWindow: true
+      }, function (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, { ready: "ready" }, function (response) {
+          console.log("tabs")
+          console.log(tabs)
+          // 	if (response.download === "download") {
+          // 		console.log(response);
+          // if (1) {
+          screenshot.saveScreenshot(tabs);
+          // }
+          // else {
+          // 	screenshot.data = '';
+          // }
+        });
+      });
+
+    });
+    // });
+  }
+};
+chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+
+  // alert(tabId)
+  console.log(tabId,changeInfo,tab)
+  // chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    // const { id: tabId } = tabs[0];
+    chrome.extension.getBackgroundPage().startRecording2(tabId);
+  // });
+});
 
 // VIDEO RECORDING START
-const startScreenRecording = tabId => {
+/* const startScreenRecording = tabId => {
   recordingVideoId = chrome.desktopCapture.chooseDesktopMedia(
     ["screen"],
     onMediaSelected
@@ -131,19 +200,19 @@ const getVideoDataUrl = async () => {
       return reject(null);
     }
   });
-};
+}; */
 
 function updateIcon() {
   var iconName = loading ?
-          './assets/images/cloud-upload64-' + ((iconIndex % 2)+1) + '.png' : './assets/images/bug16.png';
-    chrome.browserAction.setIcon({path: iconName});
+    './assets/images/cloud-upload64-' + ((iconIndex % 2) + 1) + '.png' : './assets/images/bug16.png';
+  chrome.browserAction.setIcon({ path: iconName });
 }
 
 async function stopRecording() {
-
-  await stopVideoRecording();
+alert('function called in backjs 211')
+  // await stopVideoRecording();
   loading = true;
-  intervalId = setInterval(function() {
+  intervalId = setInterval(function () {
     iconIndex++;
     updateIcon();
   }, 500);
@@ -151,16 +220,19 @@ async function stopRecording() {
     async () => {
       const networkLog = await stopNetworkRecording();
       const consoleLog = await stopConsoleRecording(tabId);
-      const video = await getVideoDataUrl();
+      // const video = await getVideoDataUrl();
       var obj = {};
       networkLog.recordingStartedTime = recordingStartedTime;
-      obj.networkLog = JSON.stringify(networkLog);
-      obj.consoleLog = JSON.stringify(consoleLog);
-      obj.video = video;
+      // obj.networkLog = JSON.stringify(networkLog);
+      // obj.consoleLog = JSON.stringify(consoleLog);
+      obj.networkLog = networkLog;
+      obj.consoleLog = consoleLog;
+      // obj.video = video;
       obj.key = (new Date).getTime();
       obj.recordingStartedTime = recordingStartedTime;
       recordingStartedTime = null;
       console.log('obj', obj);
+      console.log(JSON.stringify(obj));
       var xmlHttp = new XMLHttpRequest();
       xmlHttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
@@ -168,12 +240,12 @@ async function stopRecording() {
           updateIcon();
           clearInterval(intervalId)
           alert(obj.key);
-          window.open(`http://web-shooter-preview.s3-website-us-east-1.amazonaws.com/view/${obj.key}`, '_blank');
+          // window.open(`http://web-shooter-preview.s3-website-us-east-1.amazonaws.com/view/${obj.key}`, '_blank');
         }
       };
-      xmlHttp.open("POST", ' http://ec2-3-95-132-124.compute-1.amazonaws.com:3000/upload'); // false for synchronous request
-      xmlHttp.setRequestHeader("Content-type", "application/json");
-      xmlHttp.send(JSON.stringify(obj));
+      // xmlHttp.open("POST", ' http://ec2-3-95-132-124.compute-1.amazonaws.com:3000/upload'); // false for synchronous request
+      // xmlHttp.setRequestHeader("Content-type", "application/json");
+      // xmlHttp.send(JSON.stringify(obj));
 
     }, 2000);
 }
@@ -257,12 +329,14 @@ chrome.runtime.onConnect.addListener(port => {
 });
 
 function startNetworkRecording(tabid) {
-    chrome.debugger.attach({ //debug at current tab
-      tabId: tabid
-    }, "1.0", onAttach.bind(null, tabid));
+  console.log('start network recording')
+  chrome.debugger.attach({ //debug at current tab
+    tabId: tabid
+  }, "1.0", onAttach.bind(null, tabid));
 }
 
 function onAttach(tabId) {
+  console.log("on attach called")
   chrome.debugger.sendCommand({
     tabId: tabId
   }, "Network.enable");
@@ -273,7 +347,9 @@ function onAttach(tabId) {
 }
 
 function allEventHandler(debuggeeId, message, params) {
+  // alert("allEventHandler called")
   var request = requestsMap[params.requestId];
+  console.log(request)
   if (!request) {
     request = {
       startedDateTime: new Date().toISOString()
@@ -308,7 +384,8 @@ function allEventHandler(debuggeeId, message, params) {
           }
         };
         request = {
-          created: new Date().toISOString()
+          created: new Date().toISOString(),
+          response: ''
         };
         requests.push(request);
         requestsMap[params.requestId] = request;
@@ -336,3 +413,38 @@ function allEventHandler(debuggeeId, message, params) {
       break;
   }
 }
+
+
+
+function startRecording2(id) {
+  tabId = id;
+  // alert('started')
+  // startScreenRecording(id);
+  startConsoleRecording(id);
+  startNetworkRecording(id);
+  // screenshot.init();
+
+}
+
+function startRecording(id) {
+  tabId = id;
+  // alert('started')
+  // startScreenRecording(id);
+  // startConsoleRecording(id);
+  // startNetworkRecording(id);
+  screenshot.init();
+
+}
+
+chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    chrome.tabs.sendMessage(tabs[0].id, { greeting: "hello" }, function (response) {
+      console.log(response);
+    });
+  });
+});
+chrome.runtime.onMessage.addListener(
+  function (request, sender, sendResponse) {
+    alert('req')
+    console.log(request);
+  });
