@@ -1,9 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 "use strict";
-// var JSZip = require("jszip");
 
 function WebRequest() { };
 const constants = {
@@ -64,17 +59,11 @@ var screenshot = {
 
       link.href = screenshot.content.toDataURL();
 
-      // localStorage.setItem('imageDAta',link.href)
-
-      // link.click();
       canvas.toBlob(function (blob) {
         blobList.push(blob)
         console.log(blob instanceof Blob);
 
       });
-      // let screentShots=JSON.parse(localStorage.getItem('screentShots'))
-      // if(screentShots==undefined)
-      // screentShots=[]
 
       let screentShots = {
         time: screenshotTime,
@@ -85,8 +74,6 @@ var screenshot = {
         payload: screentShots,
         action: 'SCREENSHOT'
       }
-
-      // localStorage.setItem('screentShots',JSON.stringify(screentShots))
 
       chrome.tabs.sendMessage(tabs[0].id, msg, (response) => {
         console.log(response);
@@ -107,7 +94,7 @@ var screenshot = {
     }, function (data) {
       screenshot.data = data;
 
-      // send an alert message to webpage
+      // send an //alert message to webpage
       chrome.tabs.query({
         active: true,
         currentWindow: true
@@ -132,12 +119,8 @@ var screenshot = {
 };
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 
-  // alert(tabId)
   console.log(tabId, changeInfo, tab)
-  // chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-  // const { id: tabId } = tabs[0];
   chrome.extension.getBackgroundPage().startRecording2(tabId);
-  // });
 });
 
 // VIDEO RECORDING START
@@ -150,7 +133,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 
 const onMediaSelected = id => {
   if (!id) {
-    alert("Permission denied for recording");
+    // //alert("Permission denied for recording");
   }
   recordingStartedTime = new Date();
   const options = {
@@ -256,7 +239,6 @@ const getBlobDataUrl = (blob) => {
 
 function makeZip(logs, imageList) {
 
-  alert('in make zip')
   let link = document.createElement('a');
   link.download = 'attachment.zip';
 
@@ -305,8 +287,6 @@ function makeZip(logs, imageList) {
         var base64data = reader.result.split(',')[1];
         console.log(base64data);
         res(base64data)
-        // base64data=''
-        // img.file(index + "png", base64data, { base64: true });
       }
     });
   });
@@ -357,7 +337,7 @@ function makeZip(logs, imageList) {
 
 }
 async function stopRecording(tabId) {
-  alert('function called in backjs 211')
+  // //alert('function called in backjs 211')
   // await stopVideoRecording();
   loading = true;
   intervalId = setInterval(function () {
@@ -368,29 +348,21 @@ async function stopRecording(tabId) {
     async () => {
       const networkLog = await stopNetworkRecording();
       const consoleLog = await stopConsoleRecording(tabId);
-      // imageList = await getScreenShots(tabId)
-      getScreenShots(tabId).then(list =>{
-        alert('imagelist')
-        alert(list)
-        imageList = list
-      } )
+      imageList = await getScreenShots(tabId)
+
       let logs = {
         console: consoleLog,
         network: networkLog
       }
       logs = cleanLogs(logs, imageList)
 
-      alert(JSON.stringify(imageList))
       makeZip(logs, imageList)
 
-      // const video = await getVideoDataUrl();
       var obj = {};
       networkLog.recordingStartedTime = recordingStartedTime;
-      // obj.networkLog = JSON.stringify(networkLog);
-      // obj.consoleLog = JSON.stringify(consoleLog);
+
       obj.networkLog = networkLog;
       obj.consoleLog = consoleLog;
-      // obj.video = video;
       obj.key = (new Date).getTime();
       obj.recordingStartedTime = recordingStartedTime;
       recordingStartedTime = null;
@@ -403,7 +375,7 @@ async function stopRecording(tabId) {
           loading = false;
           updateIcon();
           clearInterval(intervalId)
-          alert(obj.key);
+          // //alert(obj.key);
           // window.open(`http://web-shooter-preview.s3-website-us-east-1.amazonaws.com/view/${obj.key}`, '_blank');
         }
       };
@@ -448,6 +420,8 @@ const getScreenShots = ((tabId) => {
         action: constants.GET_SCREENSHOTS
       },
       response => {
+        // //alert(452)
+        // //alert(JSON.stringify(response))
         res(response);
       }
     );
@@ -460,16 +434,16 @@ function cleanLogs(logs, imageList) {
     console: [],
     network: []
   }
-  /*  logs.console.forEach(eachLog=>{
+   logs.console.log.forEach(eachLog=>{
      imageList.forEach(eachImage => {
        let tempDate=
        if(eachImage.geteachLog.dateTime)
        filtered.console.push(eachLog)
      });
-   }) */
+   })
 
-  alert("logs", JSON.stringify(logs))
-  alert('imageList', JSON.stringify(imageList))
+  // //alert("logs", JSON.stringify(logs))
+  // //alert('imageList', JSON.stringify(imageList))
 
 }
 
@@ -543,7 +517,7 @@ function onAttach(tabId) {
 }
 
 function allEventHandler(debuggeeId, message, params) {
-  // alert("allEventHandler called")
+  //alert("allEventHandler called")
   var request = requestsMap[params.requestId];
   console.log(request)
   if (!request) {
@@ -614,7 +588,7 @@ function allEventHandler(debuggeeId, message, params) {
 
 function startRecording2(id) {
   tabId = id;
-  // alert('started')
+  //alert('started')
   // startScreenRecording(id);
   startConsoleRecording(id);
   startNetworkRecording(id);
@@ -624,7 +598,7 @@ function startRecording2(id) {
 
 function startRecording(id) {
   tabId = id;
-  // alert('started')
+  //alert('started')
   // startScreenRecording(id);
   // startConsoleRecording(id);
   // startNetworkRecording(id);
@@ -641,6 +615,21 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 });
 chrome.runtime.onMessage.addListener(
   function (request, sender, sendResponse) {
-    alert('req')
+    // //alert('req')
     console.log(request);
   });
+
+  /* 
+  // for (let i = 0,j=2; i < 30,j=i%4+1; i++,j++) {
+//     // for (let j = 2; j < 4; j++) {
+//         console.log(i, j)
+//     // }
+// }
+
+for (let i = 0; i < 30; i++) {
+    // for (let j = 2; j < 4; j++) {
+        console.log(i)
+    // }
+}
+
+ */

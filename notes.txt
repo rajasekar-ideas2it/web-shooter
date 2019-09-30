@@ -1,0 +1,12 @@
+shooter
+
+1.could not create folder via browser js
+2.                  zip with files
+    we can sent to server for zip 
+3.mail could not send with client browser////
+    we can do it with server also
+
+to do
+    access downloaded files with browser entirely/////
+    local storage remove data before 10 minutes
+    keep it managable
