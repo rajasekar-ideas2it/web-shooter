@@ -1,12 +1,17 @@
 const constants = {
   START_CONSOLE_RECORDING: "START_CONSOLE_RECORDING",
-  STOP_CONSOLE_RECORDING: "STOP_CONSOLE_RECORDING"
+  STOP_CONSOLE_RECORDING: "STOP_CONSOLE_RECORDING",
+  SCREENSHOT:"SCREENSHOT",
+  GET_SCREENSHOTS:"GET_SCREENSHOTS"
 };
 console.log("Content script screen recorder");
-
+localStorage.setItem('consoleLogs','[{"dateTime":"2019-09-27T11:23:47.501Z","type":"log","message":"logging from console.js"},{"dateTime":"2019-09-27T11:23:47.518Z","type":"log","message":"Query variable %s not found"},{"dateTime":"2019-09-27T11:23:47.810Z","type":"log","message":"install sumo badge..."},{"dateTime":"2019-09-27T11:23:47.823Z","type":"log","message":"Query variable %s not found"},{"dateTime":"2019-09-27T11:23:48.871Z","type":"log","message":"logging from console.js"},{"dateTime":"2019-09-27T12:30:23.608Z","type":"log","message":"logging from console.js"},{"dateTime":"2019-09-27T13:03:13.392Z","type":"log","message":"Session Halted.."},{"dateTime":"2019-09-27T13:04:00.139Z","type":"log","message":"Starting new recording @@@@@"},{"dateTime":"2019-09-27T13:04:00.152Z","type":"log","message":"Initialized FM APIs..."},{"dateTime":"2019-09-27T13:08:51.024Z","type":"log","message":"install sumo badge..."},{"dateTime":"2019-09-27T13:08:51.036Z","type":"log","message":"Query variable %s not found"},{"dateTime":"2019-09-27T13:34:52.293Z","type":"log","message":"install sumo badge..."},{"dateTime":"2019-09-27T13:34:52.305Z","type":"log","message":"Query variable %s not found"},{"dateTime":"2019-09-27T14:08:05.070Z","type":"log","message":"Session Halted.."},{"dateTime":"2019-09-30T04:49:44.094Z","type":"log","message":"install sumo badge..."},{"dateTime":"2019-09-30T04:49:44.108Z","type":"log","message":"Query variable %s not found"},{"dateTime":"2019-09-30T05:28:30.874Z","type":"log","message":"install sumo badge..."},{"dateTime":"2019-09-30T05:28:30.886Z","type":"log","message":"Query variable %s not found"}]')
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   // alert('content scrrip called 8'+JSON.stringify(request)+' req')
   switch (request.action) {
+    case constants.SCREENSHOT:
+      addScreenShots(request.payload)
+      break;
     case constants.START_CONSOLE_RECORDING:
       // console.stdlog = console.log.bind(console);
       // console.log = function() {
@@ -36,6 +41,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       sendResponse({ logs: JSON.parse(localStorage.getItem("consoleLogs"))});
       cleanConsoleLogs();
       break;
+    case constants.GET_SCREENSHOTS:
+      sendResponse( JSON.parse(localStorage.getItem("screent_shots")));
+      cleanConsoleLogs();
+      break;
     default:
       sendResponse({ error: "Unhandled action" });
   }
@@ -45,6 +54,16 @@ const cleanConsoleLogs = () => {
   alert(localStorage.getItem("consoleLogs"))
   // localStorage.setItem("consoleLogs", '[]');
 };
+
+function addScreenShots(payload){
+  // alert(JSON.stringify(payload))
+  let screenShots=JSON.parse(localStorage.getItem('screent_shots'))
+  if(screenShots==undefined)
+  screenShots=[]
+  screenShots.push(payload)
+  // alert(JSON.stringify(screenShots))
+  localStorage.setItem('screent_shots',JSON.stringify(screenShots))
+}
 
 function AddConsolejs() {
   console.log("entried in add console11");

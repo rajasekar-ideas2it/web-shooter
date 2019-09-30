@@ -3,11 +3,14 @@
 // found in the LICENSE file.
 
 "use strict";
+// var JSZip = require("jszip");
 
 function WebRequest() { };
 const constants = {
   START_CONSOLE_RECORDING: "START_CONSOLE_RECORDING",
-  STOP_CONSOLE_RECORDING: "STOP_CONSOLE_RECORDING"
+  STOP_CONSOLE_RECORDING: "STOP_CONSOLE_RECORDING",
+  SCREENSHOT: "SCREENSHOT",
+  GET_SCREENSHOTS: "GET_SCREENSHOTS"
 };
 let recordingVideoId = null;
 let recordedVideoBlobs = [];
@@ -27,6 +30,8 @@ var pages = {};
 var loading = false;
 var intervalId;
 var iconIndex = 0;
+let blobList = []
+let imageList = []
 
 
 
@@ -54,10 +59,40 @@ var screenshot = {
       let title = ''
       if (tabs != undefined & tabs[0] != undefined)
         title = tabs[0].title
-      link.download =  title + '_' + new Date() + ".png";
+      let screenshotTime = new Date()
+      link.download = title + '_' + screenshotTime + ".png";
+
       link.href = screenshot.content.toDataURL();
-      link.click();
-      
+
+      // localStorage.setItem('imageDAta',link.href)
+
+      // link.click();
+      canvas.toBlob(function (blob) {
+        blobList.push(blob)
+        console.log(blob instanceof Blob);
+
+      });
+      // let screentShots=JSON.parse(localStorage.getItem('screentShots'))
+      // if(screentShots==undefined)
+      // screentShots=[]
+
+      let screentShots = {
+        time: screenshotTime,
+        image: link.download
+      }
+
+      let msg = {
+        payload: screentShots,
+        action: 'SCREENSHOT'
+      }
+
+      // localStorage.setItem('screentShots',JSON.stringify(screentShots))
+
+      chrome.tabs.sendMessage(tabs[0].id, msg, (response) => {
+        console.log(response);
+      });
+
+
       screenshot.data = '';
     };
     image.src = screenshot.data;
@@ -98,10 +133,10 @@ var screenshot = {
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 
   // alert(tabId)
-  console.log(tabId,changeInfo,tab)
+  console.log(tabId, changeInfo, tab)
   // chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    // const { id: tabId } = tabs[0];
-    chrome.extension.getBackgroundPage().startRecording2(tabId);
+  // const { id: tabId } = tabs[0];
+  chrome.extension.getBackgroundPage().startRecording2(tabId);
   // });
 });
 
@@ -200,7 +235,8 @@ const getVideoDataUrl = async () => {
       return reject(null);
     }
   });
-}; */
+}; 
+*/
 
 function updateIcon() {
   var iconName = loading ?
@@ -208,8 +244,120 @@ function updateIcon() {
   chrome.browserAction.setIcon({ path: iconName });
 }
 
-async function stopRecording() {
-alert('function called in backjs 211')
+const getBlobDataUrl = (blob) => {
+  var reader = new FileReader();
+  reader.readAsDataURL(blob);
+  reader.onloadend = function () {
+    var base64data = reader.result;
+    console.log(base64data);
+  }
+};
+
+
+function makeZip(logs, imageList) {
+
+  alert('in make zip')
+  let link = document.createElement('a');
+  link.download = 'attachment.zip';
+
+  var zip = new JSZip();
+  zip.file("info.txt", "Hello World\n");
+  var img = zip.folder("images");
+
+  /* 
+  const getVideoDataUrl = async () => {
+  return new Promise((resolve, reject) => {
+    if (recordedVideoBlobs.length > 0) {
+      var superBuffer = new Blob(recordedVideoBlobs, {
+        type: 'video/webm'
+      });
+      var reader = new window.FileReader();
+      reader.readAsDataURL(superBuffer);
+      reader.onloadend = function () {
+        return resolve(reader.result);
+      }
+    } else {
+      return reject(null);
+    }
+  }); */
+
+  /*  blobList.forEach((eachBlob, index) => {
+     var reader = new FileReader();
+     reader.readAsDataURL(eachBlob);
+ 
+     reader.onloadend = function () {
+       var base64data = reader.result;
+       console.log(base64data);
+       // base64data=''
+       img.file(index + "png", base64data, { base64: true });
+     }
+ 
+   }); */
+
+  let promises = []
+
+  promises = blobList.map((eachBlob) => {
+    return new Promise((res, rej) => {
+      var reader = new FileReader();
+      reader.readAsDataURL(eachBlob);
+
+      reader.onloadend = function () {
+        var base64data = reader.result.split(',')[1];
+        console.log(base64data);
+        res(base64data)
+        // base64data=''
+        // img.file(index + "png", base64data, { base64: true });
+      }
+    });
+  });
+
+  Promise.all(promises).then(values => {
+    values.forEach((base64data, index) => {
+      img.file(imageList[index].image, base64data, { base64: true });
+    })
+    var generateOptions = { compression: 'STORE', type: 'blob' };
+
+    // if (!process.browser) {
+    //   generateOptions.type = 'nodebuffer';
+    // }
+    var content = zip.generateAsync(generateOptions);
+    content.then((x) => {
+      console.log(x)
+      var a = document.createElement("a");
+      document.body.appendChild(a);
+      let url = window.URL.createObjectURL(x);
+      a.href = url;
+      a.download = 'attachment.zip';
+      a.click();
+    })
+  }).then(() => {
+    blobList = []
+    promises = []
+  })
+
+  // var generateOptions = { compression: 'STORE', type: 'blob' };
+
+  // // if (!process.browser) {
+  // //   generateOptions.type = 'nodebuffer';
+  // // }
+  // var content = zip.generateAsync(generateOptions);
+  // content.then((x) => {
+  //   console.log(x)
+  //   var a = document.createElement("a");
+  //   document.body.appendChild(a);
+  //   let url = window.URL.createObjectURL(x);
+  //   a.href = url;
+  //   a.download = 'hello.zip';
+  //   a.click();
+
+  // })
+  // console.log(content);
+  // window.location.href = "data:application/zip;base64," + content;
+  // console.log(window.location.href)
+
+}
+async function stopRecording(tabId) {
+  alert('function called in backjs 211')
   // await stopVideoRecording();
   loading = true;
   intervalId = setInterval(function () {
@@ -220,6 +368,21 @@ alert('function called in backjs 211')
     async () => {
       const networkLog = await stopNetworkRecording();
       const consoleLog = await stopConsoleRecording(tabId);
+      // imageList = await getScreenShots(tabId)
+      getScreenShots(tabId).then(list =>{
+        alert('imagelist')
+        alert(list)
+        imageList = list
+      } )
+      let logs = {
+        console: consoleLog,
+        network: networkLog
+      }
+      logs = cleanLogs(logs, imageList)
+
+      alert(JSON.stringify(imageList))
+      makeZip(logs, imageList)
+
       // const video = await getVideoDataUrl();
       var obj = {};
       networkLog.recordingStartedTime = recordingStartedTime;
@@ -234,6 +397,7 @@ alert('function called in backjs 211')
       console.log('obj', obj);
       console.log(JSON.stringify(obj));
       var xmlHttp = new XMLHttpRequest();
+
       xmlHttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
           loading = false;
@@ -276,6 +440,38 @@ const stopConsoleRecording = async (tabId) => {
     );
   });
 };
+
+const getScreenShots = ((tabId) => {
+  return new Promise((res, rej) => {
+    chrome.tabs.sendMessage(
+      tabId, {
+        action: constants.GET_SCREENSHOTS
+      },
+      response => {
+        res(response);
+      }
+    );
+  });
+});
+
+function cleanLogs(logs, imageList) {
+
+  let filtered = {
+    console: [],
+    network: []
+  }
+  /*  logs.console.forEach(eachLog=>{
+     imageList.forEach(eachImage => {
+       let tempDate=
+       if(eachImage.geteachLog.dateTime)
+       filtered.console.push(eachLog)
+     });
+   }) */
+
+  alert("logs", JSON.stringify(logs))
+  alert('imageList', JSON.stringify(imageList))
+
+}
 
 async function stopNetworkRecording() {
   // ports["devtools"].postMessage({
