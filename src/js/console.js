@@ -3,7 +3,7 @@ if (!console.stdDebug) {console.stdDebug = console.debug.bind(console);}
 if (!console.stdError) {console.stdError = console.error.bind(console);}
 if (!console.stdWarn) {console.stdWarn = console.warn.bind(console);}
 
-console.log('logging from console.js')
+// console.log('logging from console.js')
 
 function getConsoleLogs() {
   return JSON.parse(

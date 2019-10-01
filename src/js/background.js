@@ -7,17 +7,17 @@ const constants = {
   SCREENSHOT: "SCREENSHOT",
   GET_SCREENSHOTS: "GET_SCREENSHOTS"
 };
-let recordingVideoId = null;
+/* let recordingVideoId = null;
 let recordedVideoBlobs = [];
 let stream = null;
 let mediaRecorder = null;
 const videoMimeType = "video/webm";
+var req;
+var startTime = 0; */
 let ports = {};
 let networkLog = null;
 let tabId = null;
 let recordingStartedTime = null;
-var req;
-var startTime = 0;
 
 var requests = [];
 var requestsMap = {};
@@ -25,10 +25,9 @@ var pages = {};
 var loading = false;
 var intervalId;
 var iconIndex = 0;
+
 let blobList = []
 let imageList = []
-
-
 
 // for screent shot
 var screenshot = {
@@ -75,6 +74,7 @@ var screenshot = {
         action: 'SCREENSHOT'
       }
 
+      // if (isNotChromeURL())
       chrome.tabs.sendMessage(tabs[0].id, msg, (response) => {
         console.log(response);
       });
@@ -88,6 +88,7 @@ var screenshot = {
   initEvents: function () {
 
     // chrome.browserAction.onClicked.addListener(function(tab) {
+    // if (!isChromeURL())
     chrome.tabs.captureVisibleTab(null, {
       format: "png",
       quality: 100
@@ -104,7 +105,6 @@ var screenshot = {
           console.log(tabs)
           // 	if (response.download === "download") {
           // 		console.log(response);
-          // if (1) {
           screenshot.saveScreenshot(tabs);
           // }
           // else {
@@ -117,11 +117,13 @@ var screenshot = {
     // });
   }
 };
-chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 
-  console.log(tabId, changeInfo, tab)
-  chrome.extension.getBackgroundPage().startRecording2(tabId);
-});
+if (!isChromeURL())
+  chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+
+    console.log(tabId, changeInfo, tab)
+    chrome.extension.getBackgroundPage().startRecording(tabId);
+  });
 
 // VIDEO RECORDING START
 /* const startScreenRecording = tabId => {
@@ -243,7 +245,7 @@ function makeZip(logs, imageList) {
   link.download = 'attachment.zip';
 
   var zip = new JSZip();
-  zip.file("info.txt", "Hello World\n");
+  // zip.file("info.txt", "Hello World\n");
   var img = zip.folder("images");
 
   /* 
@@ -297,9 +299,9 @@ function makeZip(logs, imageList) {
     })
     var generateOptions = { compression: 'STORE', type: 'blob' };
 
-    // if (!process.browser) {
-    //   generateOptions.type = 'nodebuffer';
-    // }
+    /* if (!process.browser) {
+      generateOptions.type = 'nodebuffer';
+    } */
     var content = zip.generateAsync(generateOptions);
     content.then((x) => {
       console.log(x)
@@ -315,30 +317,8 @@ function makeZip(logs, imageList) {
     promises = []
   })
 
-  // var generateOptions = { compression: 'STORE', type: 'blob' };
-
-  // // if (!process.browser) {
-  // //   generateOptions.type = 'nodebuffer';
-  // // }
-  // var content = zip.generateAsync(generateOptions);
-  // content.then((x) => {
-  //   console.log(x)
-  //   var a = document.createElement("a");
-  //   document.body.appendChild(a);
-  //   let url = window.URL.createObjectURL(x);
-  //   a.href = url;
-  //   a.download = 'hello.zip';
-  //   a.click();
-
-  // })
-  // console.log(content);
-  // window.location.href = "data:application/zip;base64," + content;
-  // console.log(window.location.href)
-
 }
 async function stopRecording(tabId) {
-  // //alert('function called in backjs 211')
-  // await stopVideoRecording();
   loading = true;
   intervalId = setInterval(function () {
     iconIndex++;
@@ -346,6 +326,7 @@ async function stopRecording(tabId) {
   }, 500);
   setTimeout(
     async () => {
+      // console.log(requests)
       const networkLog = await stopNetworkRecording();
       const consoleLog = await stopConsoleRecording(tabId);
       imageList = await getScreenShots(tabId)
@@ -354,7 +335,9 @@ async function stopRecording(tabId) {
         console: consoleLog,
         network: networkLog
       }
-      logs = cleanLogs(logs, imageList)
+      logs = filterLogs(logs, imageList)
+      // filterLogs(logs, imageList)
+
 
       makeZip(logs, imageList)
 
@@ -420,31 +403,82 @@ const getScreenShots = ((tabId) => {
         action: constants.GET_SCREENSHOTS
       },
       response => {
-        // //alert(452)
-        // //alert(JSON.stringify(response))
         res(response);
       }
     );
   });
 });
 
-function cleanLogs(logs, imageList) {
+let logs = {}
+let filtered = {
+  console: [],
+  network: []
+}
 
-  let filtered = {
+function parseDate(input) {
+  var parts = input.match(/(\d+)/g);
+  // new Date(year, month [, date [, hours[, minutes[, seconds[, ms]]]]])
+  return new Date(parts[0], parts[1] - 1, parts[2]); // months are 0-based
+}
+
+/* function compare(m, n) {
+  if (m == 0 || n == 0) {
+    return 0;
+  }
+  else if (Math.round(parseDate(imageList[n].time).getTime() / 1000) - 1 < Math.round(logs.console.logs[m].dateTime) / 1000 < Math.round(parseDate(imageList[n].time).getTime() / 1000) + 1) {
+    filtered.console.push(logs.console.logs[m])
+    return compare(m - 1, n)
+    // return 1;
+  }
+  else
+    return compare(m - 1, n - 1)
+} */
+
+function compareLog(logIndex, imageIndex) {
+  let timeInSecs = Math.round(parseDate(imageList[imageIndex].time).getTime() / 1000)
+  let logTimeInSecs = Math.round(logs.console.logs[logIndex].dateTime / 1000)
+
+  if (logIndex == 0 || imageIndex == 0) {
+    return 0;
+  }
+  else if ((timeInSecs - 1 < logTimeInSecs) & (logTimeInSecs < timeInSecs + 1)) {
+    filtered.console.push(logs.console.logs[logIndex])
+    return compareLog(logIndex - 1, imageIndex)
+  }
+  else
+    return compareLog(logIndex - 1, imageIndex - 1)
+}
+
+function compareNetworkLog(logIndex, imageIndex) {
+  let timeInSecs = Math.round(parseDate(imageList[imageIndex].time).getTime() / 1000)
+  let networkTimeInSecs = Math.round(logs.network.entries[logIndex].dateTime / 1000)
+
+  if (logIndex == 0 || imageIndex == 0) {
+    return 0;
+  }
+  else if ((timeInSecs - 1 < networkTimeInSecs) & (networkTimeInSecs < timeInSecs + 1)) {
+    filtered.network.push(logs.network.entries[logIndex])
+    return compareNetworkLog(logIndex - 1, imageIndex)
+  }
+  else
+    return compareNetworkLog(logIndex - 1, imageIndex - 1)
+}
+
+
+function filterLogs(log, imageList) {
+  filtered = {
     console: [],
     network: []
   }
-   logs.console.log.forEach(eachLog=>{
-     imageList.forEach(eachImage => {
-       let tempDate=
-       if(eachImage.geteachLog.dateTime)
-       filtered.console.push(eachLog)
-     });
-   })
 
-  // //alert("logs", JSON.stringify(logs))
-  // //alert('imageList', JSON.stringify(imageList))
+  logs = log
+  let logIndex = log.console.logs.length - 1
+  let imageIndex = imageList.length - 1
+  compareLog(logIndex, imageIndex)
+  console.log(log)
 
+  let networkLogIndex = log.network.entries.length - 1
+  compareNetworkLog(networkLogIndex, imageIndex)
 }
 
 async function stopNetworkRecording() {
@@ -518,8 +552,8 @@ function onAttach(tabId) {
 
 function allEventHandler(debuggeeId, message, params) {
   //alert("allEventHandler called")
-  var request = requestsMap[params.requestId];
-  console.log(request)
+  let request = requestsMap[params.requestId];
+  // console.log(request)
   if (!request) {
     request = {
       startedDateTime: new Date().toISOString()
@@ -585,51 +619,20 @@ function allEventHandler(debuggeeId, message, params) {
 }
 
 
-
-function startRecording2(id) {
+function startRecording(id) {
   tabId = id;
-  //alert('started')
-  // startScreenRecording(id);
   startConsoleRecording(id);
   startNetworkRecording(id);
   // screenshot.init();
-
 }
 
-function startRecording(id) {
+function initiateScreenShot(id) {
   tabId = id;
-  //alert('started')
-  // startScreenRecording(id);
-  // startConsoleRecording(id);
-  // startNetworkRecording(id);
   screenshot.init();
-
 }
 
-chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    chrome.tabs.sendMessage(tabs[0].id, { greeting: "hello" }, function (response) {
-      console.log(response);
-    });
-  });
-});
-chrome.runtime.onMessage.addListener(
-  function (request, sender, sendResponse) {
-    // //alert('req')
-    console.log(request);
-  });
-
-  /* 
-  // for (let i = 0,j=2; i < 30,j=i%4+1; i++,j++) {
-//     // for (let j = 2; j < 4; j++) {
-//         console.log(i, j)
-//     // }
-// }
-
-for (let i = 0; i < 30; i++) {
-    // for (let j = 2; j < 4; j++) {
-        console.log(i)
-    // }
+function isChromeURL() {
+  let url = window.location.toString()
+  if (url.substr(0, 9) == "chrome://")
+    return true;
 }
-
- */
