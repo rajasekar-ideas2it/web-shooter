@@ -125,6 +125,7 @@ export class AutoCompleteDemoComponent implements OnInit {
     printLogs() {
         console.log(new Date(), 'getCall log message')
         console.warn(new Date(), 'getCall warn message')
+        console.error(new Date(), 'getCall err message')
 
         const errorMsg = 'the # is not even';
         for (let number = 2; number <= 5; number += 1) {

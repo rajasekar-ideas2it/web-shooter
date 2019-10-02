@@ -10,3 +10,8 @@ to do
     access downloaded files with browser entirely/////
     local storage remove data before 10 minutes
     keep it managable
+==========
+
+assertion not logged
+console.group not logged
+console.table not logged

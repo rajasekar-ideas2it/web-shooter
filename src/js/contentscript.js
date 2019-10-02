@@ -38,11 +38,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       break;
     case constants.STOP_CONSOLE_RECORDING:
       sendResponse({ logs: JSON.parse(localStorage.getItem("consoleLogs")) });
-      cleanConsoleLogs();
+      // cleanConsoleLogs();
       break;
     case constants.GET_SCREENSHOTS:
-      sendResponse(JSON.parse(localStorage.getItem("screen_shots")));
-      cleanConsoleLogs();
+      sendResponse(JSON.parse(localStorage.getItem("screen_shots")))
+      setTimeout(()=>cleanConsoleLogs(),400)
+      // cleanConsoleLogs();
       break;
     default:
       sendResponse({ error: "Unhandled action" });
@@ -51,7 +52,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
 const cleanConsoleLogs = () => {
   // alert(localStorage.getItem("consoleLogs"))
-  // localStorage.setItem("consoleLogs", '[]');
+  localStorage.setItem("consoleLogs", '[]');
+  localStorage.setItem("screen_shots", '[]');
+
 };
 
 function addScreenShots(payload) {

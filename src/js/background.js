@@ -53,7 +53,7 @@ var screenshot = {
       let title = ''
       if (tabs != undefined & tabs[0] != undefined)
         title = tabs[0].title
-      let screenshotTime = new Date()
+      let screenshotTime = new Date().toString()
       link.download = title + '_' + screenshotTime + ".png";
 
       link.href = screenshot.content.toDataURL();
@@ -418,7 +418,7 @@ let filtered = {
 function parseDate(input) {
   var parts = input.match(/(\d+)/g);
   // new Date(year, month [, date [, hours[, minutes[, seconds[, ms]]]]])
-  return new Date(parts[0], parts[1] - 1, parts[2]); // months are 0-based
+  return new Date(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5], parts[6]); // months are 0-based
 }
 
 /* function compare(m, n) {
@@ -434,34 +434,62 @@ function parseDate(input) {
     return compare(m - 1, n - 1)
 } */
 
-function compareLog(logIndex, imageIndex) {
-  let timeInSecs = Math.round(parseDate(imageList[imageIndex].time).getTime() / 1000)
-  let logTimeInSecs = Math.round(logs.console.logs[logIndex].dateTime / 1000)
 
-  if (logIndex == 0 || imageIndex == 0) {
-    return 0;
-  }
-  else if ((timeInSecs - 1 < logTimeInSecs) & (logTimeInSecs < timeInSecs + 1)) {
+function compareLog(logIndex, imageIndex) {
+  let timeInSecs = Math.round(new Date(imageList[imageIndex].time).getTime() / 1000)
+  let logTimeInSecs = Math.round(new Date(logs.console.logs[logIndex].dateTime).getTime() / 1000)
+  // console.log(imageList[imageIndex].time,logs.console.logs[logIndex].dateTime)
+  // console.log(parseDate(imageList[imageIndex].time),new Date(logs.console.logs[logIndex].dateTime),(timeInSecs - 3 < logTimeInSecs),(logTimeInSecs < timeInSecs + 3));
+
+  // if (logIndex == 0 || imageIndex == 0) {
+  // return 0;
+  // }
+  // else
+  if ((timeInSecs - 3 < logTimeInSecs) && (logTimeInSecs < timeInSecs + 3)) {
+    console.log(new Date(imageList[imageIndex].time), new Date(logs.console.logs[logIndex].dateTime), logIndex, imageIndex);
     filtered.console.push(logs.console.logs[logIndex])
-    return compareLog(logIndex - 1, imageIndex)
+    if (logIndex != 0)
+      return compareLog(logIndex - 1, imageIndex)
   }
-  else
-    return compareLog(logIndex - 1, imageIndex - 1)
+  else if (logTimeInSecs > timeInSecs + 3) {
+    console.log(new Date(imageList[imageIndex].time), new Date(logs.console.logs[logIndex].dateTime), logIndex, imageIndex);
+    if (logIndex != 0)
+      return compareLog(logIndex - 1, imageIndex)
+  }
+  else if (timeInSecs - 3 > logTimeInSecs) {
+    console.log(new Date(imageList[imageIndex].time), new Date(logs.console.logs[logIndex].dateTime), logIndex, imageIndex);
+    if (imageIndex != 0)
+      return compareLog(logIndex, imageIndex - 1)
+  }
+  else {
+    console.log(timeInSecs, logTimeInSecs, 'in else');
+    if (logIndex != 0)
+      return compareLog(logIndex - 1, imageIndex)
+  }
 }
 
 function compareNetworkLog(logIndex, imageIndex) {
-  let timeInSecs = Math.round(parseDate(imageList[imageIndex].time).getTime() / 1000)
-  let networkTimeInSecs = Math.round(logs.network.entries[logIndex].dateTime / 1000)
+  let timeInSecs = Math.round(new Date(imageList[imageIndex].time).getTime() / 1000)
+  let networkTimeInSecs = Math.round(new Date(logs.network.entries[logIndex].dateTime).getTime() / 1000)
 
-  if (logIndex == 0 || imageIndex == 0) {
-    return 0;
-  }
-  else if ((timeInSecs - 1 < networkTimeInSecs) & (networkTimeInSecs < timeInSecs + 1)) {
+  // if (logIndex == 0 || imageIndex == 0) {
+  //   // return 0;
+  // }
+  // else
+  if ((timeInSecs - 3 < networkTimeInSecs) && (networkTimeInSecs < timeInSecs + 3)) {
     filtered.network.push(logs.network.entries[logIndex])
     return compareNetworkLog(logIndex - 1, imageIndex)
   }
-  else
+  else if (networkTimeInSecs > timeInSecs - 3) {
+    return compareNetworkLog(logIndex - 1, imageIndex)
+  }
+  else if (timeInSecs - 3 < networkTimeInSecs) {
     return compareNetworkLog(logIndex - 1, imageIndex - 1)
+  }
+  else {
+    return compareNetworkLog(logIndex - 1, imageIndex)
+  }
+
 }
 
 

@@ -46,8 +46,8 @@ console.log = function(arguments) {
   // console.log('calling custom console.log')
   // alert('calling custom console.log')
   const consoleLogs = getConsoleLogs();
-  // consoleLogs.push({ dateTime: new Date(), type: 'log', message: formattedMessages(Array.from(arguments)) });
-  consoleLogs.push({ dateTime: new Date(), type: 'log', message: formattedMessages(arguments) });
+  // consoleLogs.push({ dateTime: new Date().toString(), type: 'log', message: formattedMessages(Array.from(arguments)) });
+  consoleLogs.push({ dateTime: new Date().toString(), type: 'log', message: formattedMessages(arguments) });
 
   // console.log("arguments")
   // console.log(arguments)
@@ -61,14 +61,14 @@ console.log = function(arguments) {
 
 console.debug = function() {
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: new Date(), type: 'debug', message: formattedMessages(Array.from(arguments)) });
+  consoleLogs.push({ dateTime: new Date().toString(), type: 'debug', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdDebug.apply(console, arguments);
 };
 
 console.error = function() {
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: new Date(), type: 'error', message: formattedMessages(Array.from(arguments)) });
+  consoleLogs.push({ dateTime: new Date().toString(), type: 'error', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdError.apply(console, arguments);
 };
@@ -76,7 +76,7 @@ console.error = function() {
 
 console.warn = function() {
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: new Date(), type: 'warn', message: formattedMessages(Array.from(arguments)) });
+  consoleLogs.push({ dateTime: new Date().toString(), type: 'warn', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdWarn.apply(console, arguments);
 };
