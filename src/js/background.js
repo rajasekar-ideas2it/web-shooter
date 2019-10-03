@@ -29,6 +29,12 @@ var iconIndex = 0;
 let blobList = []
 let imageList = []
 
+let logs = {}
+let filtered = {
+  console: [],
+  network: []
+}
+
 // for screent shot
 var screenshot = {
   content: document.createElement("canvas"),
@@ -118,12 +124,12 @@ var screenshot = {
   }
 };
 
-if (!isChromeURL())
-  chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+// if (!isChromeURL())
+chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 
-    console.log(tabId, changeInfo, tab)
-    chrome.extension.getBackgroundPage().startRecording(tabId);
-  });
+  console.log(tabId, changeInfo, tab)
+  chrome.extension.getBackgroundPage().startRecording(tabId);
+});
 
 // VIDEO RECORDING START
 /* const startScreenRecording = tabId => {
@@ -320,52 +326,60 @@ function makeZip(logs, imageList) {
 }
 async function stopRecording(tabId) {
   loading = true;
-  intervalId = setInterval(function () {
+  /* intervalId = setInterval(function () {
     iconIndex++;
     updateIcon();
-  }, 500);
+  }, 500); */
   setTimeout(
     async () => {
       // console.log(requests)
-      const networkLog = await stopNetworkRecording();
+      const networkLog = await stopNetworkRecording(tabId);
       const consoleLog = await stopConsoleRecording(tabId);
       imageList = await getScreenShots(tabId)
+      // const networkLog=[]
+      // const consoleLog=[]
+      // imageList=[]  
 
-      let logs = {
+      logs = {
         console: consoleLog,
         network: networkLog
       }
-      logs = filterLogs(logs, imageList)
-      // filterLogs(logs, imageList)
+      let logIndex = logs.console.logs.length - 1
+      let imageIndex = imageList.length - 1
+      if (logIndex < 0 || imageIndex < 0)
+        alert('No log or screen shots found.')
+      else {
+        filterLogs(logs, logIndex, imageIndex)
+        makeZip(logs, imageList)
 
 
-      makeZip(logs, imageList)
 
-      var obj = {};
-      networkLog.recordingStartedTime = recordingStartedTime;
 
-      obj.networkLog = networkLog;
-      obj.consoleLog = consoleLog;
-      obj.key = (new Date).getTime();
-      obj.recordingStartedTime = recordingStartedTime;
-      recordingStartedTime = null;
-      console.log('obj', obj);
-      console.log(JSON.stringify(obj));
-      var xmlHttp = new XMLHttpRequest();
+        var obj = {};
+        networkLog.recordingStartedTime = recordingStartedTime;
 
-      xmlHttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-          loading = false;
-          updateIcon();
-          clearInterval(intervalId)
-          // //alert(obj.key);
-          // window.open(`http://web-shooter-preview.s3-website-us-east-1.amazonaws.com/view/${obj.key}`, '_blank');
-        }
-      };
-      // xmlHttp.open("POST", ' http://ec2-3-95-132-124.compute-1.amazonaws.com:3000/upload'); // false for synchronous request
-      // xmlHttp.setRequestHeader("Content-type", "application/json");
-      // xmlHttp.send(JSON.stringify(obj));
+        obj.networkLog = networkLog;
+        obj.consoleLog = consoleLog;
+        obj.key = (new Date).getTime();
+        obj.recordingStartedTime = recordingStartedTime;
+        recordingStartedTime = null;
+        console.log('obj', obj);
+        console.log(JSON.stringify(obj));
+        var xmlHttp = new XMLHttpRequest();
 
+        // xmlHttp.onreadystatechange = function () {
+        //   if (this.readyState == 4 && this.status == 200) {
+        //     loading = false;
+        //     // updateIcon();
+        //     clearInterval(intervalId)
+        //     // //alert(obj.key);
+        //     // window.open(`http://web-shooter-preview.s3-website-us-east-1.amazonaws.com/view/${obj.key}`, '_blank');
+        //   }
+        // };
+        // xmlHttp.open("POST", ' http://ec2-3-95-132-124.compute-1.amazonaws.com:3000/upload'); // false for synchronous request
+        // xmlHttp.setRequestHeader("Content-type", "application/json");
+        // xmlHttp.send(JSON.stringify(obj));
+      }
     }, 2000);
 }
 
@@ -409,17 +423,13 @@ const getScreenShots = ((tabId) => {
   });
 });
 
-let logs = {}
-let filtered = {
-  console: [],
-  network: []
-}
 
-function parseDate(input) {
+
+/* function parseDate(input) {
   var parts = input.match(/(\d+)/g);
   // new Date(year, month [, date [, hours[, minutes[, seconds[, ms]]]]])
   return new Date(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5], parts[6]); // months are 0-based
-}
+} */
 
 /* function compare(m, n) {
   if (m == 0 || n == 0) {
@@ -441,10 +451,6 @@ function compareLog(logIndex, imageIndex) {
   // console.log(imageList[imageIndex].time,logs.console.logs[logIndex].dateTime)
   // console.log(parseDate(imageList[imageIndex].time),new Date(logs.console.logs[logIndex].dateTime),(timeInSecs - 3 < logTimeInSecs),(logTimeInSecs < timeInSecs + 3));
 
-  // if (logIndex == 0 || imageIndex == 0) {
-  // return 0;
-  // }
-  // else
   if ((timeInSecs - 3 < logTimeInSecs) && (logTimeInSecs < timeInSecs + 3)) {
     console.log(new Date(imageList[imageIndex].time), new Date(logs.console.logs[logIndex].dateTime), logIndex, imageIndex);
     filtered.console.push(logs.console.logs[logIndex])
@@ -470,46 +476,43 @@ function compareLog(logIndex, imageIndex) {
 
 function compareNetworkLog(logIndex, imageIndex) {
   let timeInSecs = Math.round(new Date(imageList[imageIndex].time).getTime() / 1000)
-  let networkTimeInSecs = Math.round(new Date(logs.network.entries[logIndex].dateTime).getTime() / 1000)
+  let networkTimeInSecs = Math.round(new Date(logs.network.entries[logIndex].startedDateTime).getTime() / 1000)
 
-  // if (logIndex == 0 || imageIndex == 0) {
-  //   // return 0;
-  // }
-  // else
   if ((timeInSecs - 3 < networkTimeInSecs) && (networkTimeInSecs < timeInSecs + 3)) {
     filtered.network.push(logs.network.entries[logIndex])
-    return compareNetworkLog(logIndex - 1, imageIndex)
+    if (logIndex != 0)
+      return compareNetworkLog(logIndex - 1, imageIndex)
   }
-  else if (networkTimeInSecs > timeInSecs - 3) {
-    return compareNetworkLog(logIndex - 1, imageIndex)
+  else if (networkTimeInSecs > timeInSecs + 3) {
+    if (logIndex != 0)
+      return compareNetworkLog(logIndex - 1, imageIndex)
   }
-  else if (timeInSecs - 3 < networkTimeInSecs) {
-    return compareNetworkLog(logIndex - 1, imageIndex - 1)
+  else if (timeInSecs - 3 > networkTimeInSecs) {
+    if (imageIndex != 0)
+      return compareNetworkLog(logIndex, imageIndex - 1)
   }
   else {
-    return compareNetworkLog(logIndex - 1, imageIndex)
+    if (logIndex != 0)
+      return compareNetworkLog(logIndex - 1, imageIndex)
   }
 
 }
 
 
-function filterLogs(log, imageList) {
+function filterLogs(log, logIndex, imageIndex) {
   filtered = {
     console: [],
     network: []
   }
 
-  logs = log
-  let logIndex = log.console.logs.length - 1
-  let imageIndex = imageList.length - 1
   compareLog(logIndex, imageIndex)
   console.log(log)
-
   let networkLogIndex = log.network.entries.length - 1
   compareNetworkLog(networkLogIndex, imageIndex)
+
 }
 
-async function stopNetworkRecording() {
+async function stopNetworkRecording(tabId) {
   // ports["devtools"].postMessage({
   //   source: "background",
   //   action: "getNetworkHar"
@@ -522,7 +525,7 @@ async function stopNetworkRecording() {
   //     }
   //   }, 100);
   // });
-  chrome.debugger.detach({ tabId: tabId });
+  // chrome.debugger.detach({ tabId: tabId });
   requestsMap = {};
   var body = {
     entries: requests.filter(obj => obj.type === 'XHR'),
@@ -561,23 +564,36 @@ chrome.runtime.onConnect.addListener(port => {
 });
 
 function startNetworkRecording(tabid) {
-  console.log('start network recording')
-  chrome.debugger.attach({ //debug at current tab
-    tabId: tabid
-  }, "1.0", onAttach.bind(null, tabid));
+  console.log('start network recording', tabid)
+  try {
+    chrome.debugger.attach({ //debug at current tab
+      tabId: tabid
+    }, "1.0", onAttach.bind(null, tabid));
+  } catch (err) {
+    if (err = 'runtime.lastError')
+      console.log('cought another debugger');
+    else
+      console.error(err);
+  }
+
 }
 
 function onAttach(tabId) {
-  console.log("on attach called")
-  chrome.debugger.sendCommand({
-    tabId: tabId
-  }, "Network.enable");
-  chrome.debugger.sendCommand({
-    tabId: tabId
-  }, "Network.clearBrowserCache");
-  chrome.debugger.onEvent.addListener(allEventHandler);
+  if (chrome.runtime.lastError) {
+    // alert(chrome.runtime.lastError.message);
+    return
+  }
+  else {
+    console.log("on attach called")
+    chrome.debugger.sendCommand({
+      tabId: tabId
+    }, "Network.clearBrowserCache");
+    chrome.debugger.sendCommand({
+      tabId: tabId
+    }, "Network.enable");
+    chrome.debugger.onEvent.addListener(allEventHandler);
+  }
 }
-
 function allEventHandler(debuggeeId, message, params) {
   //alert("allEventHandler called")
   let request = requestsMap[params.requestId];
@@ -638,6 +654,13 @@ function allEventHandler(debuggeeId, message, params) {
       }, "Network.getResponseBody", {
           "requestId": params.requestId
         }, function (response) {
+          if ('lastError' in chrome.runtime) {
+            //console.log( chrome.runtime.lastError );
+            if (chrome.runtime.lastError.message == '{"code":-32000,"message":"No resource with given identifier found"}') {
+              //will error  occur when the query returns nothing
+              return;
+            }
+          }
           if (response) {
             request.response.body = response;
           }
@@ -659,8 +682,8 @@ function initiateScreenShot(id) {
   screenshot.init();
 }
 
-function isChromeURL() {
+/* function isChromeURL() {
   let url = window.location.toString()
   if (url.substr(0, 9) == "chrome://")
     return true;
-}
+} */

@@ -11,6 +11,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   switch (request.action) {
     case constants.SCREENSHOT:
       addScreenShots(request.payload)
+      sendResponse({ error: "screen_shot" });
       break;
     case constants.START_CONSOLE_RECORDING:
       // console.stdlog = console.log.bind(console);
