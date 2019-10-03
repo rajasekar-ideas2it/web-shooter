@@ -4,7 +4,7 @@ function WebRequest() { };
 const constants = {
   START_CONSOLE_RECORDING: "START_CONSOLE_RECORDING",
   STOP_CONSOLE_RECORDING: "STOP_CONSOLE_RECORDING",
-  SCREENSHOT: "SCREENSHOT",
+  SET_SCREENSHOT: "SET_SCREENSHOT",
   GET_SCREENSHOTS: "GET_SCREENSHOTS"
 };
 /* let recordingVideoId = null;
@@ -37,213 +37,63 @@ let filtered = {
 
 // for screent shot
 var screenshot = {
-  content: document.createElement("canvas"),
-  data: '',
 
   init: function () {
     this.initEvents();
   },
 
-  saveScreenshot: function (tabs) {
-    var image = new Image();
-    image.onload = function () {
-      var canvas = screenshot.content;
-      canvas.width = image.width;
-      canvas.height = image.height;
-      var context = canvas.getContext("2d");
-      context.drawImage(image, 0, 0);
-
-      // save the image
-      var link = document.createElement('a');
-      // link.href=window.location.href
-      let title = ''
-      if (tabs != undefined & tabs[0] != undefined)
-        title = tabs[0].title
-      let screenshotTime = new Date().toString()
-      link.download = title + '_' + screenshotTime + ".png";
-
-      link.href = screenshot.content.toDataURL();
-
-      canvas.toBlob(function (blob) {
-        blobList.push(blob)
-        console.log(blob instanceof Blob);
-
-      });
-
-      let screentShots = {
-        time: screenshotTime,
-        image: link.download
-      }
-
-      let msg = {
-        payload: screentShots,
-        action: 'SCREENSHOT'
-      }
-
-      // if (isNotChromeURL())
-      chrome.tabs.sendMessage(tabs[0].id, msg, (response) => {
-        console.log(response);
-      });
-
-
-      screenshot.data = '';
-    };
-    image.src = screenshot.data;
-  },
-
   initEvents: function () {
-
-    // chrome.browserAction.onClicked.addListener(function(tab) {
-    // if (!isChromeURL())
     chrome.tabs.captureVisibleTab(null, {
       format: "png",
       quality: 100
-    }, function (data) {
-      screenshot.data = data;
+    },
+      function (data) {
+        let blob = dataURItoBlob(data)
+        if (blob instanceof Blob) {
+          blobList.push(blob)
+          chrome.tabs.query({
+            active: true,
+            currentWindow: true
+          },
+            function (tabs) {
+              let title = ''
+              if (tabs != undefined & tabs[0] != undefined)
+                title = tabs[0].title
+              let screenshotTime = new Date().toString()
 
-      // send an //alert message to webpage
-      chrome.tabs.query({
-        active: true,
-        currentWindow: true
-      }, function (tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, { ready: "ready" }, function (response) {
-          console.log("tabs")
-          console.log(tabs)
-          // 	if (response.download === "download") {
-          // 		console.log(response);
-          screenshot.saveScreenshot(tabs);
-          // }
-          // else {
-          // 	screenshot.data = '';
-          // }
-        });
+              let screentShot = {
+                time: screenshotTime,
+                image: ''
+              }
+
+              screentShot.image = title + '_' + screenshotTime + ".png";
+              let msg = {
+                payload: screentShot,
+                action: 'SET_SCREENSHOT'
+              }
+              console.log(msg);
+
+              chrome.tabs.sendMessage(tabs[0].id, msg, (response) => {
+                console.log(response);
+              });
+            });
+        }
+        else {
+          alert('invalid image captured')
+        }
       });
-
-    });
-    // });
   }
-};
+}
 
-// if (!isChromeURL())
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-
-  console.log(tabId, changeInfo, tab)
   chrome.extension.getBackgroundPage().startRecording(tabId);
 });
-
-// VIDEO RECORDING START
-/* const startScreenRecording = tabId => {
-  recordingVideoId = chrome.desktopCapture.chooseDesktopMedia(
-    ["screen"],
-    onMediaSelected
-  );
-};
-
-const onMediaSelected = id => {
-  if (!id) {
-    // //alert("Permission denied for recording");
-  }
-  recordingStartedTime = new Date();
-  const options = {
-    mandatory: {
-      chromeMediaSource: "desktop",
-      chromeMediaSourceId: id
-    }
-  };
-  navigator.webkitGetUserMedia({
-      audio: options,
-      video: {
-        mandatory: {
-          chromeMediaSource: "desktop",
-          chromeMediaSourceId: id,
-          maxWidth: 1280,
-          maxHeight: 720
-        }
-      }
-    },
-    onVideoStreamSuccess,
-    onVideoStreamFailure
-  );
-};
-
-const onVideoStreamSuccess = stream => {
-  stream = stream;
-  const options = {
-    mimeType: videoMimeType
-  };
-  mediaRecorder = new MediaRecorder(stream, options);
-  mediaRecorder.onstop = () => {
-    console.info("Recording has ended");
-  };
-  mediaRecorder.ondataavailable = event => {
-    if (event.data && event.data.size > 0) {
-      recordedVideoBlobs.push(event.data);
-    }
-  };
-  // mediaRecorder.start(10); seperate chunks of 10 milliseconds
-  mediaRecorder.start();
-
-  // Stop sharing button handler
-  stream.getVideoTracks()[0].onended = function () {
-    console.info("Recording has ended");
-    // stopVideoRecording();
-    stopRecording();
-  };
-};
-
-const onVideoStreamFailure = () => {
-  console.log("onVideoStreamFailure ");
-};
-
-const stopVideoRecording = async () => {
-  return new Promise((resolve, reject) => {
-    if (recordingVideoId != null) {
-      chrome.desktopCapture.cancelChooseDesktopMedia(recordingVideoId);
-      recordingVideoId = null;
-      if (mediaRecorder.state === "recording") {
-        mediaRecorder.stop();
-      }
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-      resolve();
-    }
-  });
-};
-
-const getVideoDataUrl = async () => {
-  return new Promise((resolve, reject) => {
-    if (recordedVideoBlobs.length > 0) {
-      var superBuffer = new Blob(recordedVideoBlobs, {
-        type: 'video/webm'
-      });
-      var reader = new window.FileReader();
-      reader.readAsDataURL(superBuffer);
-      reader.onloadend = function () {
-        return resolve(reader.result);
-      }
-    } else {
-      return reject(null);
-    }
-  });
-}; 
-*/
 
 function updateIcon() {
   var iconName = loading ?
     './assets/images/cloud-upload64-' + ((iconIndex % 2) + 1) + '.png' : './assets/images/bug16.png';
   chrome.browserAction.setIcon({ path: iconName });
 }
-
-const getBlobDataUrl = (blob) => {
-  var reader = new FileReader();
-  reader.readAsDataURL(blob);
-  reader.onloadend = function () {
-    var base64data = reader.result;
-    console.log(base64data);
-  }
-};
-
 
 function makeZip(logs, imageList) {
 
@@ -253,36 +103,6 @@ function makeZip(logs, imageList) {
   var zip = new JSZip();
   // zip.file("info.txt", "Hello World\n");
   var img = zip.folder("images");
-
-  /* 
-  const getVideoDataUrl = async () => {
-  return new Promise((resolve, reject) => {
-    if (recordedVideoBlobs.length > 0) {
-      var superBuffer = new Blob(recordedVideoBlobs, {
-        type: 'video/webm'
-      });
-      var reader = new window.FileReader();
-      reader.readAsDataURL(superBuffer);
-      reader.onloadend = function () {
-        return resolve(reader.result);
-      }
-    } else {
-      return reject(null);
-    }
-  }); */
-
-  /*  blobList.forEach((eachBlob, index) => {
-     var reader = new FileReader();
-     reader.readAsDataURL(eachBlob);
- 
-     reader.onloadend = function () {
-       var base64data = reader.result;
-       console.log(base64data);
-       // base64data=''
-       img.file(index + "png", base64data, { base64: true });
-     }
- 
-   }); */
 
   let promises = []
 
@@ -305,7 +125,9 @@ function makeZip(logs, imageList) {
     })
     var generateOptions = { compression: 'STORE', type: 'blob' };
 
-    /* if (!process.browser) {
+    /*
+    //to check node application
+     if (!process.browser) {
       generateOptions.type = 'nodebuffer';
     } */
     var content = zip.generateAsync(generateOptions);
@@ -332,13 +154,9 @@ async function stopRecording(tabId) {
   }, 500); */
   setTimeout(
     async () => {
-      // console.log(requests)
       const networkLog = await stopNetworkRecording(tabId);
       const consoleLog = await stopConsoleRecording(tabId);
       imageList = await getScreenShots(tabId)
-      // const networkLog=[]
-      // const consoleLog=[]
-      // imageList=[]  
 
       logs = {
         console: consoleLog,
@@ -352,9 +170,6 @@ async function stopRecording(tabId) {
         filterLogs(logs, logIndex, imageIndex)
         makeZip(logs, imageList)
 
-
-
-
         var obj = {};
         networkLog.recordingStartedTime = recordingStartedTime;
 
@@ -365,8 +180,8 @@ async function stopRecording(tabId) {
         recordingStartedTime = null;
         console.log('obj', obj);
         console.log(JSON.stringify(obj));
-        var xmlHttp = new XMLHttpRequest();
 
+        // var xmlHttp = new XMLHttpRequest();
         // xmlHttp.onreadystatechange = function () {
         //   if (this.readyState == 4 && this.status == 200) {
         //     loading = false;
@@ -423,28 +238,6 @@ const getScreenShots = ((tabId) => {
   });
 });
 
-
-
-/* function parseDate(input) {
-  var parts = input.match(/(\d+)/g);
-  // new Date(year, month [, date [, hours[, minutes[, seconds[, ms]]]]])
-  return new Date(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5], parts[6]); // months are 0-based
-} */
-
-/* function compare(m, n) {
-  if (m == 0 || n == 0) {
-    return 0;
-  }
-  else if (Math.round(parseDate(imageList[n].time).getTime() / 1000) - 1 < Math.round(logs.console.logs[m].dateTime) / 1000 < Math.round(parseDate(imageList[n].time).getTime() / 1000) + 1) {
-    filtered.console.push(logs.console.logs[m])
-    return compare(m - 1, n)
-    // return 1;
-  }
-  else
-    return compare(m - 1, n - 1)
-} */
-
-
 function compareLog(logIndex, imageIndex) {
   let timeInSecs = Math.round(new Date(imageList[imageIndex].time).getTime() / 1000)
   let logTimeInSecs = Math.round(new Date(logs.console.logs[logIndex].dateTime).getTime() / 1000)
@@ -495,6 +288,30 @@ function compareNetworkLog(logIndex, imageIndex) {
     if (logIndex != 0)
       return compareNetworkLog(logIndex - 1, imageIndex)
   }
+}
+
+function dataURItoBlob(dataURI) {
+  // convert base64 to raw binary data held in a string
+  // doesn't handle URLEncoded DataURIs - see SO answer #6850276 for code that does this
+  var byteString = atob(dataURI.split(',')[1]);
+
+  // separate out the mime component
+  var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
+
+  // write the bytes of the string to an ArrayBuffer
+  var ab = new ArrayBuffer(byteString.length);
+
+  // create a view into the buffer
+  var ia = new Uint8Array(ab);
+
+  // set the bytes of the buffer to the correct values
+  for (var i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+
+  // write the ArrayBuffer to a blob, and you're done
+  var blob = new Blob([ab], { type: mimeString });
+  return blob;
 
 }
 

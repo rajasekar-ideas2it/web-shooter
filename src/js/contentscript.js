@@ -1,17 +1,15 @@
 const constants = {
   START_CONSOLE_RECORDING: "START_CONSOLE_RECORDING",
   STOP_CONSOLE_RECORDING: "STOP_CONSOLE_RECORDING",
-  SCREENSHOT: "SCREENSHOT",
+  SET_SCREENSHOT: "SET_SCREENSHOT",
   GET_SCREENSHOTS: "GET_SCREENSHOTS"
 };
-console.log("Content script screen recorder");
-// localStorage.setItem('consoleLogs','[]')
-// if(isNotChromeURL())
+
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   switch (request.action) {
-    case constants.SCREENSHOT:
+    case constants.SET_SCREENSHOT:
       addScreenShots(request.payload)
-      sendResponse({ error: "screen_shot" });
+      // sendResponse({ msg: "screen_shot" });
       break;
     case constants.START_CONSOLE_RECORDING:
       // console.stdlog = console.log.bind(console);
@@ -39,12 +37,10 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       break;
     case constants.STOP_CONSOLE_RECORDING:
       sendResponse({ logs: JSON.parse(localStorage.getItem("consoleLogs")) });
-      // cleanConsoleLogs();
       break;
     case constants.GET_SCREENSHOTS:
       sendResponse(JSON.parse(localStorage.getItem("screen_shots")))
-      setTimeout(()=>cleanConsoleLogs(),400)
-      // cleanConsoleLogs();
+      setTimeout(() => cleanConsoleLogs(), 400)
       break;
     default:
       sendResponse({ error: "Unhandled action" });
@@ -52,14 +48,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 });
 
 const cleanConsoleLogs = () => {
-  // alert(localStorage.getItem("consoleLogs"))
   localStorage.setItem("consoleLogs", '[]');
   localStorage.setItem("screen_shots", '[]');
 
 };
 
 function addScreenShots(payload) {
-
   let screenShots = JSON.parse(localStorage.getItem('screen_shots'))
   if (screenShots == undefined)
     screenShots = []
@@ -68,18 +62,13 @@ function addScreenShots(payload) {
 }
 
 function AddConsolejs() {
-  console.log("entried in add console11");
   if (IsTopWindow()) {
-    try {
-      console.log("entried in add console");
+    var body = document.getElementsByTagName("body")[0];
+    var consoleJS = document.createElement("script");
+    consoleJS.setAttribute("type", "text/javascript");
+    consoleJS.setAttribute("src", chrome.extension.getURL("console.js"));
 
-      var body = document.getElementsByTagName("body")[0];
-      var consoleJS = document.createElement("script");
-      consoleJS.setAttribute("type", "text/javascript");
-      consoleJS.setAttribute("src", chrome.extension.getURL("console.js"));
-
-      body.appendChild(consoleJS);
-    } catch (e) { }
+    body.appendChild(consoleJS);
   }
 }
 
@@ -93,11 +82,4 @@ function IsTopWindow() {
   } catch (e) {
     return false;
   }
-}
-
-
-function isNotChromeURL() {
-  let url = window.location.toString()
-  if (url.substr(0, 9) != "chrome://")
-    return true;
 }

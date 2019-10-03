@@ -36,25 +36,21 @@ function formattedMessages(message) {
   if (typeof message === 'string') {
     return message;
   }
+  else if (message.stack) {
+    return message.stack;
+  }
   else if (typeof message === 'object') {
     return JSON.stringify(message);
   } else if (message.stack) {
     return message.stack;
   }
-  // const formattedMessages = messages.map(message => {
-
-  //   return message;
-  // });
-  // return formattedMessages;
 };
 
 console.log = function (arguments) {
   const consoleLogs = getConsoleLogs();
-  // consoleLogs.push({ dateTime: new Date().toString(), type: 'log', message: formattedMessages(Array.from(arguments)) });
   consoleLogs.push({ dateTime: new Date().toString(), type: 'log', message: formattedMessages(arguments) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdlog.call(console, arguments);
-  // console.stdlog.apply(console, arguments);
 
 };
 
@@ -69,7 +65,6 @@ console.error = function () {
   const consoleLogs = getConsoleLogs();
   consoleLogs.push({ dateTime: new Date().toString(), type: 'error', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
-  // console.stdError.apply(console, arguments);
   console.stdlog.apply(console, arguments);
 
 };
@@ -80,7 +75,6 @@ console.warn = function () {
   consoleLogs.push({ dateTime: new Date().toString(), type: 'warn', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdlog.apply(console, arguments);
-  // console.stdWarn.apply(console, arguments);
 
 };
 
