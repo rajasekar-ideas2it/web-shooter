@@ -35,7 +35,7 @@ let filtered = {
   network: []
 }
 
-// for screent shot
+// for screen-shot
 var screenshot = {
 
   init: function () {
@@ -71,10 +71,10 @@ var screenshot = {
                 payload: screentShot,
                 action: 'SET_SCREENSHOT'
               }
-              console.log(msg);
+              // console.log(msg);
 
               chrome.tabs.sendMessage(tabs[0].id, msg, (response) => {
-                console.log(response);
+                // console.log(response);
               });
             });
         }
@@ -101,7 +101,7 @@ function makeZip(logs, imageList) {
   link.download = 'attachment.zip';
 
   var zip = new JSZip();
-  // zip.file("info.txt", "Hello World\n");
+  // zip.file("info.txt", "file content here \n");
   var img = zip.folder("images");
 
   let promises = []
@@ -113,7 +113,7 @@ function makeZip(logs, imageList) {
 
       reader.onloadend = function () {
         var base64data = reader.result.split(',')[1];
-        console.log(base64data);
+        // console.log(base64data);
         res(base64data)
       }
     });
@@ -132,7 +132,7 @@ function makeZip(logs, imageList) {
     } */
     var content = zip.generateAsync(generateOptions);
     content.then((x) => {
-      console.log(x)
+      // console.log(x)
       var a = document.createElement("a");
       document.body.appendChild(a);
       let url = window.URL.createObjectURL(x);
@@ -162,8 +162,21 @@ async function stopRecording(tabId) {
         console: consoleLog,
         network: networkLog
       }
-      let logIndex = logs.console.logs.length - 1
-      let imageIndex = imageList.length - 1
+      let logIndex = 0
+      let imageIndex = 0
+
+      if (logs.console == undefined || imageList == undefined) {
+        alert('No log or screen shots found.')
+        return 0
+      }
+
+      if (logs.console)
+        logIndex = logs.console.logs.length - 1
+
+      if (imageList != undefined)
+        imageIndex = imageList.length - 1
+
+
       if (logIndex < 0 || imageIndex < 0)
         alert('No log or screen shots found.')
       else {
@@ -178,8 +191,8 @@ async function stopRecording(tabId) {
         obj.key = (new Date).getTime();
         obj.recordingStartedTime = recordingStartedTime;
         recordingStartedTime = null;
-        console.log('obj', obj);
-        console.log(JSON.stringify(obj));
+        // console.log('obj', obj);
+        // console.log(JSON.stringify(obj));
 
         // var xmlHttp = new XMLHttpRequest();
         // xmlHttp.onreadystatechange = function () {
@@ -206,7 +219,7 @@ const startConsoleRecording = tabId => {
       action: constants.START_CONSOLE_RECORDING
     },
     response => {
-      console.log(response);
+      // console.log(response);
     }
   );
   // });
@@ -245,23 +258,23 @@ function compareLog(logIndex, imageIndex) {
   // console.log(parseDate(imageList[imageIndex].time),new Date(logs.console.logs[logIndex].dateTime),(timeInSecs - 3 < logTimeInSecs),(logTimeInSecs < timeInSecs + 3));
 
   if ((timeInSecs - 3 < logTimeInSecs) && (logTimeInSecs < timeInSecs + 3)) {
-    console.log(new Date(imageList[imageIndex].time), new Date(logs.console.logs[logIndex].dateTime), logIndex, imageIndex);
+    // console.log(new Date(imageList[imageIndex].time), new Date(logs.console.logs[logIndex].dateTime), logIndex, imageIndex);
     filtered.console.push(logs.console.logs[logIndex])
     if (logIndex != 0)
       return compareLog(logIndex - 1, imageIndex)
   }
   else if (logTimeInSecs > timeInSecs + 3) {
-    console.log(new Date(imageList[imageIndex].time), new Date(logs.console.logs[logIndex].dateTime), logIndex, imageIndex);
+    // console.log(new Date(imageList[imageIndex].time), new Date(logs.console.logs[logIndex].dateTime), logIndex, imageIndex);
     if (logIndex != 0)
       return compareLog(logIndex - 1, imageIndex)
   }
   else if (timeInSecs - 3 > logTimeInSecs) {
-    console.log(new Date(imageList[imageIndex].time), new Date(logs.console.logs[logIndex].dateTime), logIndex, imageIndex);
+    // console.log(new Date(imageList[imageIndex].time), new Date(logs.console.logs[logIndex].dateTime), logIndex, imageIndex);
     if (imageIndex != 0)
       return compareLog(logIndex, imageIndex - 1)
   }
   else {
-    console.log(timeInSecs, logTimeInSecs, 'in else');
+    // console.log(timeInSecs, logTimeInSecs, 'in else');
     if (logIndex != 0)
       return compareLog(logIndex - 1, imageIndex)
   }
@@ -323,7 +336,11 @@ function filterLogs(log, logIndex, imageIndex) {
   }
 
   compareLog(logIndex, imageIndex)
-  console.log(log)
+  // console.log(log)
+  if (log.network.entries.length == 0) {
+    alert('No Networklog found.')
+    return 0
+  }
   let networkLogIndex = log.network.entries.length - 1
   compareNetworkLog(networkLogIndex, imageIndex)
 
@@ -356,7 +373,7 @@ async function stopNetworkRecording(tabId) {
 const handleDevtoolsMessages = message => {
   switch (message.action) {
     case "setNetworkLog":
-      console.log("Messages - - - - ", message);
+      // console.log("Messages - - - - ", message);
       networkLog = message.message;
       break;
     default:
@@ -396,12 +413,12 @@ function startNetworkRecording(tabid) {
 }
 
 function onAttach(tabId) {
+  //catch chrome.runtime error
   if (chrome.runtime.lastError) {
     // alert(chrome.runtime.lastError.message);
     return
   }
   else {
-    console.log("on attach called")
     chrome.debugger.sendCommand({
       tabId: tabId
     }, "Network.clearBrowserCache");
@@ -472,7 +489,7 @@ function allEventHandler(debuggeeId, message, params) {
           "requestId": params.requestId
         }, function (response) {
           if ('lastError' in chrome.runtime) {
-            //console.log( chrome.runtime.lastError );
+            //catch chrome.runtime.lastError
             if (chrome.runtime.lastError.message == '{"code":-32000,"message":"No resource with given identifier found"}') {
               //will error  occur when the query returns nothing
               return;
