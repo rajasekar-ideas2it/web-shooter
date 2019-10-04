@@ -1,6 +1,8 @@
 "use strict";
+// var beautify = require("json-beautify");
+// var beautify=new json
 
-function WebRequest() { };
+// function WebRequest() { };
 const constants = {
   START_CONSOLE_RECORDING: "START_CONSOLE_RECORDING",
   STOP_CONSOLE_RECORDING: "STOP_CONSOLE_RECORDING",
@@ -59,7 +61,8 @@ var screenshot = {
               let title = ''
               if (tabs != undefined & tabs[0] != undefined)
                 title = tabs[0].title
-              let screenshotTime = new Date().toString()
+              // let screenshotTime = new Date().toString()
+              let screenshotTime = getPSTFromUTC(new Date())
 
               let screentShot = {
                 time: screenshotTime,
@@ -74,7 +77,16 @@ var screenshot = {
               // console.log(msg);
 
               chrome.tabs.sendMessage(tabs[0].id, msg, (response) => {
-                // console.log(response);
+                if (chrome.runtime.lastError) {
+                //   // alert('called runtime error')
+
+                } 
+                  // console.log(response);
+                  new Notification('Screen-shot', {
+                    icon: 'assets/images/bug32.png',
+                    body: screentShot.image + ' image captured.'
+                  });
+                // }
               });
             });
         }
@@ -101,7 +113,8 @@ function makeZip(logs, imageList) {
   link.download = 'attachment.zip';
 
   var zip = new JSZip();
-  // zip.file("info.txt", "file content here \n");
+  zip.file("console.log", JSON.stringify(filtered.console, null, 4));
+  zip.file("network.log", JSON.stringify(filtered.network, null, 4));
   var img = zip.folder("images");
 
   let promises = []
@@ -146,12 +159,20 @@ function makeZip(logs, imageList) {
   })
 
 }
+function resetData() {
+  blobList = []
+  imageList = []
+  filtered = {
+    console: [],
+    network: []
+  }
+}
 async function stopRecording(tabId) {
   loading = true;
-  /* intervalId = setInterval(function () {
+  intervalId = setInterval(function () {
     iconIndex++;
-    updateIcon();
-  }, 500); */
+    // updateIcon();
+  }, 500);
   setTimeout(
     async () => {
       const networkLog = await stopNetworkRecording(tabId);
@@ -166,6 +187,7 @@ async function stopRecording(tabId) {
       let imageIndex = 0
 
       if (logs.console == undefined || imageList == undefined) {
+        resetData()
         alert('No log or screen shots found.')
         return 0
       }
@@ -177,8 +199,13 @@ async function stopRecording(tabId) {
         imageIndex = imageList.length - 1
 
 
-      if (logIndex < 0 || imageIndex < 0)
+      if (logIndex < 0 || imageIndex < 0) {
         alert('No log or screen shots found.')
+        resetData()
+        return 0;
+
+      }
+
       else {
         filterLogs(logs, logIndex, imageIndex)
         makeZip(logs, imageList)
@@ -219,7 +246,11 @@ const startConsoleRecording = tabId => {
       action: constants.START_CONSOLE_RECORDING
     },
     response => {
-      // console.log(response);
+      if (chrome.runtime.lastError) {
+        // alert('called runtime error')
+      } else {
+        // console.log(response);
+      }
     }
   );
   // });
@@ -232,7 +263,11 @@ const stopConsoleRecording = async (tabId) => {
         action: constants.STOP_CONSOLE_RECORDING
       },
       response => {
-        res(response);
+        if (chrome.runtime.lastError) {
+          // alert('called runtime error')
+        } else {
+          res(response);
+        }
       }
     );
   });
@@ -245,7 +280,12 @@ const getScreenShots = ((tabId) => {
         action: constants.GET_SCREENSHOTS
       },
       response => {
-        res(response);
+        if (chrome.runtime.lastError) {
+          // alert('called runtime error')
+        } else {
+          res(response);
+        }
+
       }
     );
   });
@@ -282,7 +322,7 @@ function compareLog(logIndex, imageIndex) {
 
 function compareNetworkLog(logIndex, imageIndex) {
   let timeInSecs = Math.round(new Date(imageList[imageIndex].time).getTime() / 1000)
-  let networkTimeInSecs = Math.round(new Date(logs.network.entries[logIndex].startedDateTime).getTime() / 1000)
+  let networkTimeInSecs = Math.round(getPSTFromUTC(new Date(logs.network.entries[logIndex].startedDateTime)).getTime() / 1000)
 
   if ((timeInSecs - 3 < networkTimeInSecs) && (networkTimeInSecs < timeInSecs + 3)) {
     filtered.network.push(logs.network.entries[logIndex])
@@ -386,7 +426,10 @@ chrome.runtime.onConnect.addListener(port => {
     ...ports,
     [`${port.name}`]: port
   };
+  console.log(ports)
+  // alert(JSON.stringify(ports))
   port.onMessage.addListener(message => {
+    // setTimeout(function() {
     switch (port.name) {
       case "devtools":
         handleDevtoolsMessages(message);
@@ -394,6 +437,8 @@ chrome.runtime.onConnect.addListener(port => {
       default:
         console.log("Unhandled port connection");
     }
+    // },100)
+    // return true
   });
 });
 
@@ -416,7 +461,7 @@ function onAttach(tabId) {
   //catch chrome.runtime error
   if (chrome.runtime.lastError) {
     // alert(chrome.runtime.lastError.message);
-    return
+    // return
   }
   else {
     chrome.debugger.sendCommand({
@@ -429,12 +474,13 @@ function onAttach(tabId) {
   }
 }
 function allEventHandler(debuggeeId, message, params) {
-  //alert("allEventHandler called")
+  // alert("allEventHandler called")
   let request = requestsMap[params.requestId];
-  // console.log(request)
+  console.log(request)
   if (!request) {
     request = {
       startedDateTime: new Date().toISOString()
+      // startedDateTime: getPSTFromUTC(new Date())
     };
     requestsMap[params.requestId] = request;
     requests.push(request);
@@ -442,6 +488,8 @@ function allEventHandler(debuggeeId, message, params) {
   switch (message) {
     case "Network.responseReceived":
       request.received = new Date().toISOString();
+      // request.received = getPSTFromUTC(new Date())
+
       request.response = {
         headers: params.response.headers,
         serverIPAddress: params.response.remoteIPAddress,
@@ -467,6 +515,7 @@ function allEventHandler(debuggeeId, message, params) {
         };
         request = {
           created: new Date().toISOString(),
+          // created: getPSTFromUTC(new Date()),
           response: ''
         };
         requests.push(request);
@@ -516,6 +565,10 @@ function initiateScreenShot(id) {
   screenshot.init();
 }
 
+function getPSTFromUTC(date) {
+  let pstDate = date.setHours(date.getHours() - 7)
+  return new Date(pstDate);
+}
 /* function isChromeURL() {
   let url = window.location.toString()
   if (url.substr(0, 9) == "chrome://")

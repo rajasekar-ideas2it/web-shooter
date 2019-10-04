@@ -48,7 +48,7 @@ function formattedMessages(message) {
 
 console.log = function (arguments) {
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: new Date().toString(), type: 'log', message: formattedMessages(arguments) });
+  consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'log', message: formattedMessages(arguments) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdlog.call(console, arguments);
 
@@ -56,14 +56,14 @@ console.log = function (arguments) {
 
 console.debug = function () {
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: new Date().toString(), type: 'debug', message: formattedMessages(Array.from(arguments)) });
+  consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'debug', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdDebug.apply(console, arguments);
 };
 
 console.error = function () {
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: new Date().toString(), type: 'error', message: formattedMessages(Array.from(arguments)) });
+  consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'error', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdlog.apply(console, arguments);
 
@@ -72,7 +72,7 @@ console.error = function () {
 
 console.warn = function () {
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: new Date().toString(), type: 'warn', message: formattedMessages(Array.from(arguments)) });
+  consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'warn', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdlog.apply(console, arguments);
 
@@ -80,43 +80,47 @@ console.warn = function () {
 
 console.table = function () {
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: new Date().toString(), type: 'table', message: formattedMessages(Array.from(arguments)) });
+  consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'table', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdTable.apply(console, arguments);
 };
 
 console.info = function () {
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: new Date().toString(), type: 'info', message: formattedMessages(Array.from(arguments)) });
+  consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'info', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdInfo.apply(console, arguments);
 };
 
 console.group = function () {
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: new Date().toString(), type: 'group', message: formattedMessages(Array.from(arguments)) });
+  consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'group', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdGroup.apply(console, arguments);
 };
 
 console.groupEnd = function () {
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: new Date().toString(), type: 'groupEnd', message: formattedMessages(Array.from(arguments)) });
+  consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'groupEnd', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdGroupEnd.apply(console, arguments);
 };
 
 console.time = function () {
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: new Date().toString(), type: 'time', message: formattedMessages(Array.from(arguments)) });
+  consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'time', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdTime.apply(console, arguments);
 };
 
 console.timeEnd = function () {
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: new Date().toString(), type: 'timeEnd', message: formattedMessages(Array.from(arguments)) });
+  consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'timeEnd', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdTimeEnd.apply(console, arguments);
 };
 
+function getPSTFromUTC(date) {
+  let pstDate = date.setHours(date.getHours() - 7)
+  return new Date(pstDate);
+}

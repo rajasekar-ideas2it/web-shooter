@@ -16,7 +16,8 @@
     "webRequest",
     "http://*/*",
     "https://*/*",
-    "debugger"
+    "debugger",
+    "notifications"
   ],
   "content_scripts": [{
     "matches": ["<all_urls>"],
