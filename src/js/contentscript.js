@@ -4,6 +4,11 @@ const constants = {
   SET_SCREENSHOT: "SET_SCREENSHOT",
   GET_SCREENSHOTS: "GET_SCREENSHOTS"
 };
+/* window.onerror = function (errorMsg, url, lineNumber, column, errorObj) {
+  console.stdlog('Error: ' + errorMsg + ' Script: ' + url + ' Line: ' + lineNumber
+    + ' Column: ' + column + ' StackTrace: ' + errorObj);
+} */
+
 
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   switch (request.action) {
@@ -83,3 +88,4 @@ function IsTopWindow() {
     return false;
   }
 }
+
