@@ -73,10 +73,8 @@ var screenshot = {
 
               chrome.tabs.sendMessage(tabs[0].id, msg, (response) => {
                 if (chrome.runtime.lastError) {
-                  //   // alert('called runtime error')
 
                 }
-                // console.log(response);
                 new Notification('Screen-shot', {
                   icon: 'assets/images/bug32.png',
                   body: screentShot.image + ' image captured.'
@@ -564,8 +562,3 @@ function getPSTFromUTC(date) {
   let pstDate = date.setHours(date.getHours() - 7)
   return new Date(pstDate);
 }
-/* function isChromeURL() {
-  let url = window.location.toString()
-  if (url.substr(0, 9) == "chrome://")
-    return true;
-} */

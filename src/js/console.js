@@ -19,14 +19,28 @@ function getConsoleLogs() {
   );
 }
 
-function formattedMessages(message) {
-  if (typeof message === 'string') {
-    return message;
+function formattedMessages(messages) {
+  if (typeof messages === 'string')
+    return messages;
+    
+  else if (messages instanceof Array) {
+    const formattedMessages = messages.map(message => {
+      if (typeof message === 'string') {
+        return message;
+      } else if (message.stack) {
+        return message.stack;
+      } else if (typeof message === 'object') {
+        console.stdlog(message)
+        return JSON.stringify(message);
+      }
+      return message;
+    });
+    return formattedMessages;
   }
-  else if (typeof message === 'object') {
-    return JSON.stringify(message);
+  else if (typeof messages === 'object') {
+    return JSON.stringify(messages);
   }
-};
+}
 
 console.log = function (arguments) {
   const consoleLogs = getConsoleLogs();
@@ -45,7 +59,8 @@ console.debug = function () {
 
 console.error = function () {
   const consoleLogs = getConsoleLogs();
-  consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'error', message: arguments[1].stack });
+  // consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'error', message: arguments[1].stack });
+  consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'error', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdlog.apply(console, arguments);
 
