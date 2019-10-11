@@ -1,9 +1,5 @@
 "use strict";
 
-// Ignore net::ERR_BLOCKED_BY_CLIENT initiated by AdPlus & etc
-var ignoredUrlsHashes = {};
-var ignoredUrlsLimit = 100;
-
 const constants = {
   START_CONSOLE_RECORDING: "START_CONSOLE_RECORDING",
   STOP_CONSOLE_RECORDING: "STOP_CONSOLE_RECORDING",
@@ -56,7 +52,6 @@ var screenshot = {
               let title = ''
               if (tabs != undefined & tabs[0] != undefined)
                 title = tabs[0].title
-              // let screenshotTime = new Date().toString()
               let screenshotTime = getPSTFromUTC(new Date())
 
               let screentShot = {
@@ -69,7 +64,6 @@ var screenshot = {
                 payload: screentShot,
                 action: 'SET_SCREENSHOT'
               }
-              // console.log(msg);
 
               chrome.tabs.sendMessage(tabs[0].id, msg, (response) => {
                 if (chrome.runtime.lastError) {
@@ -79,7 +73,7 @@ var screenshot = {
                   icon: 'assets/images/bug32.png',
                   body: screentShot.image + ' image captured.'
                 });
-                // }
+
               });
             });
         }
@@ -119,7 +113,6 @@ function makeZip(logs, imageList) {
 
       reader.onloadend = function () {
         var base64data = reader.result.split(',')[1];
-        // console.log(base64data);
         res(base64data)
       }
     });
@@ -138,7 +131,6 @@ function makeZip(logs, imageList) {
     } */
     var content = zip.generateAsync(generateOptions);
     content.then((x) => {
-      // console.log(x)
       var a = document.createElement("a");
       document.body.appendChild(a);
       let url = window.URL.createObjectURL(x);
@@ -233,20 +225,16 @@ async function stopRecording(tabId) {
 
 // CONSOLE RECORDING START
 const startConsoleRecording = tabId => {
-  // chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
   chrome.tabs.sendMessage(
     tabId, {
       action: constants.START_CONSOLE_RECORDING
     },
     response => {
       if (chrome.runtime.lastError) {
-        // alert('runtime error')
       } else {
-        // console.log(response);
       }
     }
   );
-  // });
 };
 
 const stopConsoleRecording = async (tabId) => {
@@ -257,7 +245,6 @@ const stopConsoleRecording = async (tabId) => {
       },
       response => {
         if (chrome.runtime.lastError) {
-          // alert('runtime error')
         } else {
           res(response);
         }
@@ -274,7 +261,6 @@ const getScreenShots = ((tabId) => {
       },
       response => {
         if (chrome.runtime.lastError) {
-          // alert('called runtime error')
         } else {
           res(response);
         }
@@ -369,7 +355,7 @@ function filterLogs(log, logIndex, imageIndex) {
   }
 
   compareLog(logIndex, imageIndex)
-  // console.log(log)
+
   if (log.network.entries.length == 0) {
     alert('No Networklog found.')
     return 0
@@ -380,19 +366,7 @@ function filterLogs(log, logIndex, imageIndex) {
 }
 
 async function stopNetworkRecording(tabId) {
-  // ports["devtools"].postMessage({
-  //   source: "background",
-  //   action: "getNetworkHar"
-  // });
-  // return new Promise((resolve, reject) => {
-  //   const networkLogListener = window.setInterval(() => {
-  //     if (networkLog) {
-  //       resolve(networkLog);
-  //       window.clearInterval(networkLogListener);
-  //     }
-  //   }, 100);
-  // });
-  // chrome.debugger.detach({ tabId: tabId });
+
   requestsMap = {};
   var body = {
     entries: requests.filter(obj => obj.type === 'XHR'),
@@ -406,7 +380,6 @@ async function stopNetworkRecording(tabId) {
 const handleDevtoolsMessages = message => {
   switch (message.action) {
     case "setNetworkLog":
-      // console.log("Messages - - - - ", message);
       networkLog = message.message;
       break;
     default:
@@ -420,9 +393,7 @@ chrome.runtime.onConnect.addListener(port => {
     [`${port.name}`]: port
   };
   console.log(ports)
-  // alert(JSON.stringify(ports))
   port.onMessage.addListener(message => {
-    // setTimeout(function() {
     switch (port.name) {
       case "devtools":
         handleDevtoolsMessages(message);
@@ -430,8 +401,6 @@ chrome.runtime.onConnect.addListener(port => {
       default:
         console.log("Unhandled port connection");
     }
-    // },100)
-    // return true
   });
 });
 
@@ -451,10 +420,7 @@ function startNetworkRecording(tabid) {
 }
 
 function onAttach(tabId) {
-  //catch chrome.runtime error
   if (chrome.runtime.lastError) {
-    // alert(chrome.runtime.lastError.message);
-    // return
   }
   else {
     chrome.debugger.sendCommand({
@@ -467,13 +433,12 @@ function onAttach(tabId) {
   }
 }
 function allEventHandler(debuggeeId, message, params) {
-  // alert("allEventHandler called")
+
   let request = requestsMap[params.requestId];
   console.log(request)
   if (!request) {
     request = {
       startedDateTime: new Date().toISOString()
-      // startedDateTime: getPSTFromUTC(new Date())
     };
     requestsMap[params.requestId] = request;
     requests.push(request);
@@ -481,8 +446,6 @@ function allEventHandler(debuggeeId, message, params) {
   switch (message) {
     case "Network.responseReceived":
       request.received = new Date().toISOString();
-      // request.received = getPSTFromUTC(new Date())
-
       request.response = {
         headers: params.response.headers,
         serverIPAddress: params.response.remoteIPAddress,
@@ -508,7 +471,6 @@ function allEventHandler(debuggeeId, message, params) {
         };
         request = {
           created: new Date().toISOString(),
-          // created: getPSTFromUTC(new Date()),
           response: ''
         };
         requests.push(request);
@@ -550,7 +512,6 @@ function startRecording(id) {
   tabId = id;
   startConsoleRecording(id);
   startNetworkRecording(id);
-  // screenshot.init();
 }
 
 function initiateScreenShot(id) {
@@ -562,3 +523,4 @@ function getPSTFromUTC(date) {
   let pstDate = date.setHours(date.getHours() - 7)
   return new Date(pstDate);
 }
+
