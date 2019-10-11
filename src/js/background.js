@@ -52,8 +52,8 @@ var screenshot = {
               let title = ''
               if (tabs != undefined & tabs[0] != undefined)
                 title = tabs[0].title
-              let screenshotTime = getPSTFromUTC(new Date())
 
+              let screenshotTime = getPSTFromUTC(new Date()).toUTCString()
               let screentShot = {
                 time: screenshotTime,
                 image: ''
@@ -96,8 +96,14 @@ function updateIcon() {
 
 function makeZip(logs, imageList) {
 
-  let link = document.createElement('a');
-  link.download = 'attachment.zip';
+  // let link = document.createElement('a');
+  // link.download = 'attachment.zip';
+
+  filtered.console.forEach((eachData, index, array) => { array[index].dateTime = new Date(eachData.dateTime).toUTCString() })
+  filtered.network.forEach((eachData, index, array) => {
+    array[index].startedDateTime = getPSTFromUTC(new Date(eachData.startedDateTime)).toUTCString()
+    array[index].received = getPSTFromUTC(new Date(eachData.received)).toUTCString()
+  })
 
   var zip = new JSZip();
   zip.file("console.log", JSON.stringify(filtered.console, null, 4));
