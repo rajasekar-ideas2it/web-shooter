@@ -22,7 +22,7 @@ function getConsoleLogs() {
 function formattedMessages(messages) {
   if (typeof messages === 'string')
     return messages;
-    
+
   else if (messages instanceof Array) {
     const formattedMessages = messages.map(message => {
       if (typeof message === 'string') {
@@ -59,7 +59,6 @@ console.debug = function () {
 
 console.error = function () {
   const consoleLogs = getConsoleLogs();
-  // consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'error', message: arguments[1].stack });
   consoleLogs.push({ dateTime: getPSTFromUTC(new Date()), type: 'error', message: formattedMessages(Array.from(arguments)) });
   localStorage.setItem("consoleLogs", JSON.stringify(consoleLogs));
   console.stdlog.apply(console, arguments);

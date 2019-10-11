@@ -95,10 +95,6 @@ function updateIcon() {
 }
 
 function makeZip(logs, imageList) {
-
-  // let link = document.createElement('a');
-  // link.download = 'attachment.zip';
-
   filtered.console.forEach((eachData, index, array) => { array[index].dateTime = new Date(eachData.dateTime).toUTCString() })
   filtered.network.forEach((eachData, index, array) => {
     array[index].startedDateTime = getPSTFromUTC(new Date(eachData.startedDateTime)).toUTCString()
@@ -162,7 +158,6 @@ async function stopRecording(tabId) {
   loading = true;
   intervalId = setInterval(function () {
     iconIndex++;
-    // updateIcon();
   }, 500);
   setTimeout(
     async () => {
