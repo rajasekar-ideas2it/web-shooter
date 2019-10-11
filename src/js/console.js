@@ -19,19 +19,6 @@ function getConsoleLogs() {
   );
 }
 
-/* function formattedMessages(messages) {
- const formattedMessages = messages.map(message => {
-   if (typeof message === 'string') {
-     return message;
-   } else if (message.stack) {
-     return message.stack;
-   } else if (typeof message === 'object') {
-     return JSON.stringify(message);
-   }
-   return message;
- });
- return formattedMessages;
-}; */
 function formattedMessages(message) {
   if (typeof message === 'string') {
     return message;

@@ -5,6 +5,3 @@ package-lock.json
 .vscode/
 build/
 preview/build/
-ng/
-node/
-notes.txt
