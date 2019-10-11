@@ -4,17 +4,11 @@ const constants = {
   SET_SCREENSHOT: "SET_SCREENSHOT",
   GET_SCREENSHOTS: "GET_SCREENSHOTS"
 };
-/* window.onerror = function (errorMsg, url, lineNumber, column, errorObj) {
-  console.stdlog('Error: ' + errorMsg + ' Script: ' + url + ' Line: ' + lineNumber
-    + ' Column: ' + column + ' StackTrace: ' + errorObj);
-} */
-
-
+ 
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   switch (request.action) {
     case constants.SET_SCREENSHOT:
       addScreenShots(request.payload)
-      // sendResponse({ msg: "screen_shot" });
       break;
     case constants.START_CONSOLE_RECORDING:
       // console.stdlog = console.log.bind(console);
